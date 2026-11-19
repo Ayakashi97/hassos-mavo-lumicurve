@@ -52,7 +52,7 @@ language: en            # de or en
 grid_options: { columns: 12 }   # sections view: full width
 ```
 
-The integration loads the card file itself, so there is no dashboard resource to add. Hard refresh the browser once after the first install (Companion app: Settings → Companion app → Troubleshooting → Reset frontend cache).
+The integration registers the card as a dashboard resource itself (you will see it under Settings → Dashboards → Resources), so you add nothing by hand. Hard refresh the browser once after the first install (Companion app: Settings → Companion app → Troubleshooting → Reset frontend cache).
 
 ## 5. Settings
 

@@ -1,6 +1,7 @@
 """Mavo Lumicurve: syncs the scale's brew log over Home Assistant's Bluetooth and serves the brew card."""
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from homeassistant.components import frontend
@@ -13,15 +14,40 @@ from .const import CARD_URL, DOMAIN
 from .coordinator import MavoCoordinator
 from .websocket_api import async_register
 
+_LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor", "button"]
 type MavoConfigEntry = ConfigEntry[MavoCoordinator | None]
+
+
+async def _register_resource(hass: HomeAssistant, url: str) -> bool:
+    """Put the card into the dashboard resources (Settings → Dashboards → Resources) like any other custom card."""
+    try:
+        lovelace = hass.data.get("lovelace")
+        res = lovelace.get("resources") if isinstance(lovelace, dict) else getattr(lovelace, "resources", None)
+        if res is None or not hasattr(res, "async_create_item"):
+            return False  # YAML mode
+        if not getattr(res, "loaded", True):
+            await res.async_load()
+            res.loaded = True
+        for item in res.async_items():
+            if item["url"].split("?")[0] == CARD_URL:
+                if item["url"] != url:
+                    await res.async_update_item(item["id"], {"res_type": "module", "url": url})
+                return True
+        await res.async_create_item({"res_type": "module", "url": url})
+        return True
+    except Exception:  # noqa: BLE001 - never block the integration over the card
+        _LOGGER.exception("Could not register the card as a dashboard resource")
+        return False
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Serve the card from the integration and load it on every dashboard (no resource to add by hand)."""
     www = Path(__file__).parent / "www" / "mavo-lumicurve-card.js"
     await hass.http.async_register_static_paths([StaticPathConfig(CARD_URL, str(www), False)])
-    frontend.add_extra_js_url(hass, f"{CARD_URL}?v={int(www.stat().st_mtime)}")
+    url = f"{CARD_URL}?v={int(www.stat().st_mtime)}"
+    if not await _register_resource(hass, url):  # YAML-mode dashboards: load the card on every page instead
+        frontend.add_extra_js_url(hass, url)
     async_register(hass)
     return True
 

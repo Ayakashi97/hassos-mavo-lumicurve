@@ -5,6 +5,9 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Fixed
+- The integration now registers the card as a normal dashboard resource (Settings → Dashboards → Resources), like any other custom card. Version 0.9.0 only injected the file into the page, which did not make the card available.
+
 ## [0.9.0] - 2026-11-19
 
 ### Added
