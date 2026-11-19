@@ -1,4 +1,4 @@
-/* nofree-brew-card · prototype v0.2 · Mavo Lumicurve brew logbook
+/* nofree-brew-card · v0.6 · Mavo Lumicurve brew logbook
    config: { type: 'custom:nofree-brew-card', entity: 'sensor.mavo_brews' }  (attribute `brews` = list from parse.py)
            or { brews_url: 'brews.json' } for the local test page.  All options: README.
    Notes (bean, rating, text) live in HA user data (frontend/set_user_data), localStorage as fallback. */
@@ -17,9 +17,9 @@ const when = ts => { // "2022-03-18 04:40:28" -> parts (the scale's own clock); 
 };
 const disp = b => b.real_ts ? when(b.real_ts) : { short: 'früher', date: 'Frühere Sitzung', time: '', full: 'frühere Sitzung (Datum unbekannt)', year: 0 };
 const CSS = a => `
-:host{--a:${a};--mut:rgba(244,239,230,.62);display:block;color:var(--primary-text-color,#f4efe6);font:14px/1.35 system-ui,-apple-system,sans-serif}
+:host{--a:${a};--mut:rgba(244,239,230,.62);display:block;color:#f4efe6;font:14px/1.35 system-ui,-apple-system,sans-serif}
 *{box-sizing:border-box}
-.card{container-type:inline-size;border-radius:20px;padding:14px;background:linear-gradient(155deg,rgba(255,255,255,.14),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 10px 30px rgba(0,0,0,.28)}
+.card{container-type:inline-size;border-radius:20px;padding:14px;background:linear-gradient(155deg,#4a3d2c,#2a2217);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 10px 30px rgba(0,0,0,.28)}
 .ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 header .logo{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--a) 22%,transparent);color:var(--a)}
@@ -82,7 +82,7 @@ class NofreeBrewCard extends HTMLElement {
     this._c = { chart_count: 30, chart_metric: 'time', show_invalid: false, targets: {}, ...c };
     this._mode = 'all'; this._sel = null; this._menu = false; this._nopen = false; this._brews = null;
     if (!this.shadowRoot) { const r = this.attachShadow({ mode: 'open' }); this._wire(r); }
-    this._notes = this._load(); this._fetch();
+    this._notes = this._load(); if (c.brews) { this._brews = c.brews; this._draw(); } else this._fetch();
   }
   _wire(r) { // ShadowRoot has no onclick property, so use listeners (registered once)
     r.addEventListener('click', e => {
@@ -194,5 +194,7 @@ class NofreeBrewCard extends HTMLElement {
     if (keep) { const el = r.querySelector(`[data-f="${keep}"]`); if (el) { el.focus(); el.setSelectionRange?.(v.length, v.length); } }
   }
   getCardSize() { return 9; }
+  static getStubConfig() { return { entity: 'sensor.mavo_lumicurve_brews', targets: { espresso: { time: [22, 30], yield: [34, 42] }, pourover: { time: [150, 210], yield: [250, 310] } } }; }
 }
-customElements.define('nofree-brew-card', NofreeBrewCard);
+if (!customElements.get('nofree-brew-card')) customElements.define('nofree-brew-card', NofreeBrewCard);
+(window.customCards = window.customCards || []).push({ type: 'nofree-brew-card', name: 'Brew logbook (Mavo Lumicurve)', description: 'Last brew like on the scale, targets, flow graph, ratings and a brew dropdown.', preview: false });
