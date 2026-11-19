@@ -12,6 +12,7 @@ Home Assistant card with a logbook. Work in progress, tested only on one scale (
   Protocol notes come from [Beanconqueror#1198](https://github.com/graphefruit/Beanconqueror/issues/1198).
 - Reading the log did **not** clear it on our scale (same size twice). Not guaranteed on other firmware: `sync.py` saves the raw text first.
 - The scale clock is not set (dates read 2022), so timestamps only give an order.
+- Shots carry a `curve` (weight over time) when the log has enough samples: pour-overs yes, espresso mostly no.
 - A brew ends at `[MP] weight num N time T`; its yield is the last settled `[SW] lock=A-B-C` before it (B in 0.1 g).
 
 ## Use

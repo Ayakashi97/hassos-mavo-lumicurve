@@ -10,6 +10,13 @@ class T(unittest.TestCase):
         self.assertEqual(b[0]["flow_gs"], 1.62)  # 34.0 g / 21 s
         self.assertTrue(b[0]["ts"].startswith("2022-03-04"))
 
+    def test_curve(self):
+        t = "[ 1: 0: 0]D [SW] lock=100-50-0,1-1-0\n[ 1: 0:10]D [SW] lock=2000-1000-0,1-1-0\n[ 1: 0:20]D [SW] lock=4000-2000-0,1-1-0\n[ 1: 0:30]I [MP] weight num 5 time 30\n"
+        c = parse(t)[0]["curve"]
+        self.assertEqual(c[0], [0, 0.0])
+        self.assertEqual(c[-1], [30, 200.0])
+        self.assertIn([10, 100.0], c)
+
     def test_negative_and_noise(self):  # negative weights never count; short shots are flagged invalid
         t = "[ 1: 0: 0]D [SW] lock=100-50-1,1-1-0\n[ 1: 0: 1]I [MP] weight num 5 time 3\n"
         self.assertEqual(parse(t), [])

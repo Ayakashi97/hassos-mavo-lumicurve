@@ -11,6 +11,10 @@ const IC = { // 24x24 stroke icons
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
 };
 const ic = (n, c = '') => `<svg class="ic ${c}" viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
+const when = ts => { // "2022-03-18 04:40:28" -> parts (the scale's own clock); "? 03:22:14" = date unknown
+  const m = /^(\d{4})-(\d\d)-(\d\d) (\d\d:\d\d)(:\d\d)?/.exec(ts); const hm = (ts.split(' ')[1] || '').slice(0, 5);
+  return m ? { short: `${m[3]}.${m[2]}.`, date: `${m[3]}.${m[2]}.${m[1]}`, time: m[4], full: `${m[3]}.${m[2]}.${m[1]} ${m[4]}`, year: +m[1] } : { short: '?', date: 'Datum unbekannt', time: hm, full: 'Datum unbekannt ' + hm, year: 0 };
+};
 const CSS = a => `
 :host{--a:${a};--mut:rgba(244,239,230,.62);display:block;color:var(--primary-text-color,#f4efe6);font:14px/1.35 system-ui,-apple-system,sans-serif}
 *{box-sizing:border-box}
@@ -28,20 +32,23 @@ button:focus-visible,.row:focus-visible{outline:2px solid var(--a);outline-offse
 .hero .big{font-size:44px;font-weight:700;letter-spacing:-.02em;line-height:1}.hero .big small{font-size:16px;font-weight:500;color:var(--mut);margin-left:4px}
 .hero .sub{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.09);font-size:12px}.chip .ic{width:14px;height:14px}
-.chip.ok{background:color-mix(in srgb,var(--a) 24%,transparent);color:var(--a)}
+.chip.warn{background:rgba(230,120,90,.22);color:#f0a08c}.chip.ok{background:color-mix(in srgb,var(--a) 24%,transparent);color:var(--a)}
 .lab{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:6px}
 .ring{position:relative;width:104px;height:104px}.ring svg{width:104px;height:104px;transform:rotate(-90deg)}
 .ring circle{fill:none;stroke-width:9;stroke-linecap:round}.ring .bg{stroke:rgba(255,255,255,.1)}.ring .fg{stroke:var(--a);transition:stroke-dashoffset .6s}
 .ring div{position:absolute;inset:0;display:grid;place-content:center;text-align:center;font-size:22px;font-weight:700}.ring small{display:block;font-size:11px;font-weight:400;color:var(--mut)}
 .chart{margin:4px 0 14px}.chart svg{width:100%;height:76px;display:block}
 .chart rect.b{fill:var(--a);opacity:.85}.chart rect.b.out{opacity:.3}.chart rect.band{fill:var(--a);opacity:.1}
-.row{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:10px;border-radius:14px;cursor:pointer}
+.row{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:10px;border-radius:14px;cursor:pointer}
 .row:hover{background:rgba(255,255,255,.07)}
-.row .t{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.08);font-size:12px;font-weight:600}
+.row .t{width:52px;height:44px;border-radius:14px;display:grid;place-items:center;text-align:center;background:rgba(255,255,255,.08);font-size:11px;line-height:1.25;font-weight:600}
 .row .t.ok{background:color-mix(in srgb,var(--a) 24%,transparent);color:var(--a)}
 .row b{font-weight:600}.row small{display:block;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .r{text-align:right;font-size:12px;color:var(--mut)}.stars{color:var(--a);letter-spacing:1px}
 .bar{height:3px;border-radius:2px;background:rgba(255,255,255,.1);margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--a);border-radius:2px}
+.curve{margin:0 0 12px}.edit .curve{margin:0}.curve svg{width:100%;display:block}.curve text{fill:var(--mut);font-size:9px}
+.curve .wl{fill:none;stroke:var(--a);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.curve .wl.dash{stroke-dasharray:5 4;opacity:.7}
+.curve .wd{fill:var(--a)}.curve .fb{fill:var(--a);opacity:.28}.curve .ax{stroke:rgba(255,255,255,.2);stroke-width:1}.curve .note{font-size:11px;color:var(--mut)}
 .more{width:100%;margin-top:8px}
 .older{max-height:380px;overflow:auto;margin-top:4px;border-radius:14px}
 .day{margin:12px 0 2px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
@@ -86,6 +93,7 @@ class NofreeBrewCard extends HTMLElement {
       .filter(b => (this._c.show_invalid || b.valid !== false) && (this._mode === 'all' || b.mode === this._mode))
       .sort((a, b) => { const x = a.ts[0] === '?' ? '' : a.ts, y = b.ts[0] === '?' ? '' : b.ts; return x < y ? 1 : x > y ? -1 : b.i - a.i; }); // unknown date = oldest
   }
+  _stale(b) { const y = when(b.ts).year; return y && Math.abs(new Date().getFullYear() - y) > 0; } // the scale's clock is usually unset
   _flow(b) { return b.flow_gs ?? (b.time_s ? b.yield_g / b.time_s : 0); }
   _in(v, r) { return !r || (v >= r[0] && v <= r[1]); }
   _ok(b) { const k = this._c; return (k.target_time || k.target_yield || k.target_flow) && this._in(b.time_s, k.target_time) && this._in(b.yield_g, k.target_yield) && this._in(this._flow(b), k.target_flow); }
@@ -97,19 +105,34 @@ class NofreeBrewCard extends HTMLElement {
       ${tt ? `<rect class="band" x="0" y="${y(tt[1])}" width="300" height="${y(tt[0]) - y(tt[1])}" rx="3"/>` : ''}
       ${d.map((b, i) => `<rect class="b ${this._in(val(b), tt) ? '' : 'out'}" x="${i * w + 1}" y="${y(val(b))}" width="${Math.max(w - 2, 1)}" height="${72 - y(val(b))}" rx="2"/>`).join('')}</svg></div>`;
   }
+  _curve(b) { // weight line + flow bars over time; dashed average line when the log has no samples for this shot
+    const pts = b.curve || [[0, 0], [b.time_s, b.yield_g]], T = b.time_s, Y = Math.max(b.yield_g, 1), H = 86, real = pts.length >= 5;
+    const x = t => 4 + 292 * t / T, wy = g => H - (H - 6) * g / Y;
+    const m = [pts[0]]; for (const p of pts.slice(1)) if (p[0] - m[m.length - 1][0] >= 6 || p === pts[pts.length - 1]) m.push(p); // samples 1 s apart would fake flow spikes
+    const seg = m.slice(1).map((p, i) => ({ t0: m[i][0], t1: p[0], f: (p[1] - m[i][1]) / Math.max(p[0] - m[i][0], 1) }));
+    const fm = Math.max(0.1, ...seg.map(s => s.f)), peak = Math.max(...seg.map(s => s.f));
+    return `<div class="curve"><div class="lab" style="display:flex;justify-content:space-between"><span>Verlauf</span><span>Ø ${this._flow(b).toFixed(1)} g/s${real ? ' · max ' + peak.toFixed(1) : ''}</span></div>
+      <svg viewBox="0 0 300 ${H + 16}" role="img" aria-label="Gewicht und Durchfluss über ${T} Sekunden">
+      ${real ? seg.map(s => `<rect class="fb" x="${x(s.t0)}" y="${H - (H - 6) * s.f / fm}" width="${Math.max(x(s.t1) - x(s.t0) - 1, 1)}" height="${(H - 6) * s.f / fm}" rx="2"/>`).join('') : ''}
+      <path class="wl ${real ? '' : 'dash'}" d="${pts.map((p, i) => (i ? 'L' : 'M') + x(p[0]).toFixed(1) + ' ' + wy(p[1]).toFixed(1)).join('')}"/>
+      ${real ? pts.slice(1, -1).map(p => `<circle class="wd" cx="${x(p[0])}" cy="${wy(p[1])}" r="2.5"/>`).join('') : ''}
+      <line class="ax" x1="4" x2="296" y1="${H}" y2="${H}"/>
+      ${[0, .5, 1].map(f => `<text x="${4 + 292 * f}" y="${H + 12}" text-anchor="${f ? (f === 1 ? 'end' : 'middle') : 'start'}">${Math.round(T * f)} s</text>`).join('')}</svg>
+      <div class="note">${real ? 'Gewicht (Linie) · Durchfluss zwischen den Messpunkten (Balken)' : 'Die Waage hat für diesen Bezug keinen Verlauf gespeichert – gestrichelt: Durchschnitt.'}</div></div>`;
+  }
   _hero(b) {
     const C = 2 * Math.PI * 41, p = Math.min(1, b.time_s / this._c.ring_max);
-    return `<div class="hero"><div><div class="lab">Letzter Bezug</div><div class="big">${b.yield_g.toFixed(1)}<small>g</small></div>
-      <div class="sub"><span class="chip">${this._flow(b).toFixed(1)} g/s</span>${b.ratio ? `<span class="chip">1 : ${b.ratio.toFixed(1)}</span>` : ''}${b.dose_g ? `<span class="chip">${b.dose_g.toFixed(1)} g Mehl</span>` : ''}${this._ok(b) ? `<span class="chip ok">${ic('check')} im Ziel</span>` : ''}</div></div>
-      <div class="ring" role="img" aria-label="${b.time_s} Sekunden"><svg viewBox="0 0 104 104"><circle class="bg" cx="52" cy="52" r="41"/><circle class="fg" cx="52" cy="52" r="41" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - p)}"/></svg><div>${b.time_s}<small>Sekunden</small></div></div></div>`;
+    return `<div class="hero"><div><div class="lab">Letzter Bezug · ${when(b.ts).full}</div><div class="big">${b.yield_g.toFixed(1)}<small>g</small></div>
+      <div class="sub"><span class="chip">${this._flow(b).toFixed(1)} g/s</span>${b.ratio ? `<span class="chip">1 : ${b.ratio.toFixed(1)}</span>` : ''}${b.dose_g ? `<span class="chip">${b.dose_g.toFixed(1)} g Mehl</span>` : ''}${this._stale(b) ? `<span class="chip warn" title="Die Uhr der Waage ist nicht gestellt; Datum und Zeit stammen von ihr.">Waagen-Uhr ${when(b.ts).year}</span>` : ''}${this._ok(b) ? `<span class="chip ok">${ic('check')} im Ziel</span>` : ''}</div></div>
+      <div class="ring" role="img" aria-label="${b.time_s} Sekunden"><svg viewBox="0 0 104 104"><circle class="bg" cx="52" cy="52" r="41"/><circle class="fg" cx="52" cy="52" r="41" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - p)}"/></svg><div>${b.time_s}<small>Sekunden</small></div></div></div>${this._curve(b)}`;
   }
   _row(b) {
     const no = this._notes[b.id] || {}, ok = this._ok(b), tmax = this._c.ring_max;
-    let h = `<div class="row" tabindex="0" role="button" aria-expanded="${this._open === b.id}" data-id="${esc(b.id)}"><div class="t ${ok ? 'ok' : ''}">${esc(b.ts.split(' ')[1].slice(0, 5))}</div>
+    let h = `<div class="row" tabindex="0" role="button" aria-expanded="${this._open === b.id}" data-id="${esc(b.id)}"><div class="t ${ok ? 'ok' : ''}"><span>${when(b.ts).short}<br>${when(b.ts).time}</span></div>
       <div style="min-width:0"><b>${b.yield_g.toFixed(1)} g</b> in ${b.time_s} s · ${this._flow(b).toFixed(1)} g/s<small>${esc(no.bean || (b.mode === 'pourover' ? 'Filter' : 'Espresso'))}${no.note ? ' · ' + esc(no.note) : ''}</small>
       <div class="bar"><i style="width:${Math.min(100, 100 * b.time_s / (b.mode === 'pourover' ? 240 : tmax))}%"></i></div></div>
       <div class="r">${b.ratio ? '1:' + b.ratio.toFixed(1) : ''}<div class="stars">${'★'.repeat(no.stars || 0)}</div></div></div>`;
-    if (this._open === b.id) h += `<div class="edit"><input data-f="bean" placeholder="Bohne" aria-label="Bohne" value="${esc(no.bean)}">
+    if (this._open === b.id) h += `<div class="edit"><div class="note" style="font-size:11px;color:var(--mut)">${when(b.ts).date} ${esc(b.ts.split(' ')[1])} · Uhr der Waage</div>${this._curve(b)}<input data-f="bean" placeholder="Bohne" aria-label="Bohne" value="${esc(no.bean)}">
       <textarea data-f="note" rows="2" placeholder="Notiz" aria-label="Notiz">${esc(no.note)}</textarea>
       <div class="st">${[1, 2, 3, 4, 5].map(s => `<button data-s="${s}" class="${(no.stars || 0) >= s ? 'on' : ''}" aria-label="${s} Sterne">${ic('star')}</button>`).join('')}</div></div>`;
     return h;

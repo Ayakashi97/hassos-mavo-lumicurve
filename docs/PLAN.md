@@ -30,3 +30,11 @@ to an HA webhook or writes `/config/www/mavo_brews.json`.
 ## Flow rate
 Average flow = yield ÷ time (g/s, ≈ ml/s) is in `brews.json` (`flow_gs`) and the card (hero chip, rows, chart toggle, `target_flow`).
 A real flow *curve* might be possible later: the log has `[SW] restart=` / `lock=` samples during a shot, but they are sparse and not yet decoded.
+
+## What the log's clock tells us (analysed 2026-11-19)
+- The log is a full ring buffer (499,907 bytes both times we read it). File order is: 2022-03-01 … 2022-03-20, then 2022-02-02 … 2022-02-22.
+  The write pointer sits at the Mar/Feb seam, so the **newest entry is 2022-03-20 21:43** and the oldest 2022-02-02.
+- Wake/sleep gaps are continuous (median 105 min), so the scale has a running clock, but it was never set to real time and it shows 2022.
+- Roughly 2-6 identical shots a day (about 37 g in 19-21 s) look like factory/QC test routines. None of the 2026 use is visible yet.
+  Test: brew now, sync again, and look for entries *after* 2022-03-20 21:43 (the buffer is full, so new lines overwrite the oldest).
+- Curves: pour-overs have 12-20 weight samples (real flow curve), espresso shots only 1-5 near the end.
