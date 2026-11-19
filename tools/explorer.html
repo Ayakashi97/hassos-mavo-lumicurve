@@ -1,0 +1,53 @@
+<!doctype html>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BLE Explorer</title>
+<style>
+body{font:14px system-ui;margin:16px;background:#111;color:#eee}
+button,input{font:inherit;padding:8px 12px;margin:2px;border-radius:8px;border:1px solid #555;background:#222;color:#eee}
+pre{background:#000;padding:10px;border-radius:8px;white-space:pre-wrap;max-height:60vh;overflow:auto}
+</style>
+<h2>BLE Explorer</h2>
+<p>Chrome/Edge only. Click Scan, pick the Lumicurve, then wait. Press the device's buttons or change the light, then copy the log.</p>
+<input id=extra size=50 placeholder="extra service UUIDs (from nRF Connect), comma separated">
+<button id=go>Scan &amp; connect</button> <button id=cp>Copy log</button>
+<div>Write: <input id=wu size=40 value="0000fff1-0000-1000-8000-00805f9b34fb"> <input id=wh size=24 placeholder="hex bytes, e.g. 01 02"> <button id=wr>Send</button></div>
+<pre id=log></pre>
+<script>
+const L=document.getElementById('log'),t0=Date.now();
+const log=s=>{L.textContent+=`[${((Date.now()-t0)/1000).toFixed(1)}s] ${s}\n`;L.scrollTop=1e9};
+const hex=d=>[...new Uint8Array(d.buffer,d.byteOffset,d.byteLength)].map(b=>b.toString(16).padStart(2,'0')).join(' ');
+// Web Bluetooth only exposes services listed up front: all standard 0x18xx + vendor 0xFFxx + common UART services
+const CH={};
+document.getElementById('wr').onclick=async()=>{try{
+ const u=document.getElementById('wu').value.trim(),c=CH[u];if(!c)return log('unknown characteristic '+u);
+ const b=Uint8Array.from(document.getElementById('wh').value.trim().split(/\s+/).map(h=>parseInt(h,16)));
+ await(c.properties.writeWithoutResponse?c.writeValueWithoutResponse(b):c.writeValue(b));log('WROTE '+u+': '+hex(b))}catch(e){log('write failed: '+e.message)}};
+const svc=[];for(let i=0x1800;i<0x1860;i++)svc.push(i);for(let i=0xFE00;i<=0xFFFF;i++)svc.push(i);
+svc.push('6e400001-b5a3-f393-e0a9-e50e24dcca9e','0000ffe0-0000-1000-8000-00805f9b34fb','49535343-fe7d-4ae5-8fa9-9fafd205e455');
+document.getElementById('cp').onclick=()=>navigator.clipboard.writeText(L.textContent);
+document.getElementById('go').onclick=async()=>{try{
+ if(!navigator.bluetooth)return log('This browser has no Web Bluetooth. Open this page in Google Chrome or Edge (not Safari, Firefox or an embedded browser).');
+ const x=document.getElementById('extra').value.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+ const dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:svc.concat(x)});
+ log('device: '+dev.name+' id='+dev.id);
+ // passive: measurements may be broadcast in advertising packets (logged only when they change)
+ let last='';dev.addEventListener('advertisementreceived',e=>{
+  const m=[...e.manufacturerData].map(([k,v])=>'mfr 0x'+k.toString(16)+': '+hex(v)),s=[...e.serviceData].map(([k,v])=>'svc '+k+': '+hex(v));
+  const n=m.concat(s).join(' | ');if(n!==last){last=n;log('ADV rssi='+e.rssi+' '+(n||'(no data)'))}});
+ try{await dev.watchAdvertisements();log('watching advertisements')}catch(e){log('advertisements unavailable: '+e.message)}
+ dev.addEventListener('gattserverdisconnected',()=>log('DISCONNECTED'));
+ const srv=await dev.gatt.connect();
+ for(const s of await srv.getPrimaryServices()){
+  log('SERVICE '+s.uuid);
+  for(const c of await s.getCharacteristics()){
+   const p=['read','write','writeWithoutResponse','notify','indicate'].filter(k=>c.properties[k]).join(',');
+   CH[c.uuid]=c;
+   log('  CHAR '+c.uuid+' ['+p+']');
+   if(c.properties.read)try{log('    read: '+hex(await c.readValue()))}catch(e){log('    read failed: '+e.message)}
+   if(c.properties.notify||c.properties.indicate)try{
+    c.addEventListener('characteristicvaluechanged',e=>log('NOTIFY '+c.uuid+': '+hex(e.target.value)));
+    await c.startNotifications();log('    subscribed')}catch(e){log('    subscribe failed: '+e.message)}
+  }}
+ log('--- listening; change something on the device ---');
+}catch(e){log('ERROR: '+e.message)}};
+</script>

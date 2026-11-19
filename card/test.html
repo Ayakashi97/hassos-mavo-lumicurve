@@ -1,0 +1,11 @@
+<!doctype html>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brew card test</title>
+<style>body{margin:0;padding:16px;background:radial-gradient(circle at 20% 0,#3a2c1c,#14100b);min-height:100vh}.w{max-width:440px;margin:auto}</style>
+<div class="w"><nofree-brew-card id="c"></nofree-brew-card></div>
+<script src="nofree-brew-card.js"></script>
+<script>
+  // every key except brews_url/entity is optional; see README "Card options"
+  c.setConfig({ brews_url: '../data/brews.json', title: 'Espresso-Logbuch', accent: '#e8b54a',
+                chart_count: 30, target_time: [20, 30], target_yield: [34, 42] })
+</script>

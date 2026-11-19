@@ -1,0 +1,28 @@
+[ 1:37: 1]D [SYS] Date:22-3-4
+[ 1:37: 1]D [SYS] lcd id = 0x7f7f7f
+[ 1:37: 2]I [BLE] slow adv timer stop
+[ 1:37: 2]D [GS] init ok! ID=0x28,num=2
+[ 1:37: 2]I [MP] project: CK850_EN
+[ 1:37: 2]D [MCU] cal ad=513407,40220,120479,3566,0.5g=40
+[ 1:37: 2]I [MP] change step 0 11
+[ 1:37: 2]D [UI] page[0 to 35]
+[ 1:37: 2]I [KEY] polling start 1
+[ 1:37: 2]I [KEY] power on up
+[ 1:37: 2]D [SW] get zero 513407 513414
+[ 1:37: 2]I [MP] espresso cup start
+[ 1:37: 2]D [SW] key measure ready
+[ 1:37:39]I [MP] espresso restart 0 0
+[ 1:37:39]I [SS] stable get zero 529469 529473
+[ 1:37:42]I [MP] check is cup 435-0-3
+[ 1:37:46]I [MP] cup weight 0
+[ 1:37:46]I [SS] stable get zero 529470 529473
+[ 1:37:46]I [MP] espresso cup start
+[ 1:38: 2]I [BAT] cp=53, lp=54, ca=3684
+[ 1:38: 2]I [BAT] cl=53 ll=53
+[ 1:38:15]D [SW] lock=677-339-0,677-339-0,ad:532196[529471],cw:0
+[ 1:38:16]D [SW] restart=679,532205,stable:0 cw:0
+[ 1:38:16]D [SW] lock=679-340-0,679-340-0,ad:532205[529471],cw:0
+[ 1:38:17]I [MP] weight stable stop
+[ 1:38:17]I [MP] change step 11 10
+[ 1:38:17]I [MP] weight num 23 time 21
+[ 1:38:17]D [UI] page[35 to 34]
