@@ -133,3 +133,8 @@ The editor needs the Home Assistant frontend (it uses `ha-form`), so it can only
 `pourover_min_s` (90) brews at least this long are filter, `min_time_s` (8) and `min_yield_g` (5) below which a brew is noise,
 `dose_g` ([10, 20]) range that counts as the dose, `sync_delay_s` (10) seconds between the sync file's time stamp and the BLE connection.
 After a change run `.venv/bin/python tools/parse.py data/scale_log_<time>.txt data/brews.json` again.
+
+
+## Demo mode
+
+Without a configured scale (or before the first sync) the card shows example brews and a hint. `demo: true` shows them always; ratings are then kept in memory only.

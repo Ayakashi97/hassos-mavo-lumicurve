@@ -14,10 +14,20 @@ const ic = (n, c = '') => `<svg class="ic ${c}" viewBox="0 0 24 24" aria-hidden=
 
 // ---- texts: `language` picks a set, `labels: {key: 'text'}` overrides single entries
 const LABELS = {
-  de: { title: 'Logbuch', all: 'Alle', espresso: 'Espresso', pourover: 'Filter', ratio: 'Verhältnis (x)', flow: 'Fluss (g/s)', weight: 'Gewicht (g)', time: 'Zeit', target: 'Ziel', inTarget: 'im Ziel', older: 'Älterer Bezug', newer: 'Neuerer Bezug', pick: 'Bezug auswählen', bean: 'Bohne', note: 'Notiz', editNote: 'Notiz bearbeiten', stars: 'Sterne', chartTime: 'Bezugszeit (s)', chartFlow: 'Durchfluss (g/s)', last: 'letzte', btnTime: 'Zeit', btnFlow: 'Fluss', earlier: 'früher', earlierDate: 'Frühere Sitzung', earlierFull: 'frühere Sitzung (Datum unbekannt)', estimated: 'geschätzt', empty: 'Noch keine Brühungen.', dose: 'Mehl', pickHint: 'Balken antippen zum Auswählen', graphAria: 'Gewichtsverlauf über {s} Sekunden', avg: 'Ø' },
-  en: { title: 'Logbook', all: 'All', espresso: 'Espresso', pourover: 'Filter', ratio: 'Ratio (x)', flow: 'Flow (g/s)', weight: 'Weight (g)', time: 'Time', target: 'Target', inTarget: 'on target', older: 'Older brew', newer: 'Newer brew', pick: 'Select brew', bean: 'Beans', note: 'Note', editNote: 'Edit note', stars: 'stars', chartTime: 'Brew time (s)', chartFlow: 'Flow (g/s)', last: 'last', btnTime: 'Time', btnFlow: 'Flow', earlier: 'earlier', earlierDate: 'Earlier session', earlierFull: 'earlier session (date unknown)', estimated: 'estimated', empty: 'No brews yet.', dose: 'dose', pickHint: 'tap a bar to select', graphAria: 'Weight over {s} seconds', avg: 'Ø' },
+  de: { title: 'Logbuch', all: 'Alle', espresso: 'Espresso', pourover: 'Filter', ratio: 'Verhältnis (x)', flow: 'Fluss (g/s)', weight: 'Gewicht (g)', time: 'Zeit', target: 'Ziel', inTarget: 'im Ziel', older: 'Älterer Bezug', newer: 'Neuerer Bezug', pick: 'Bezug auswählen', bean: 'Bohne', note: 'Notiz', editNote: 'Notiz bearbeiten', stars: 'Sterne', chartTime: 'Bezugszeit (s)', chartFlow: 'Durchfluss (g/s)', last: 'letzte', btnTime: 'Zeit', btnFlow: 'Fluss', earlier: 'früher', earlierDate: 'Frühere Sitzung', earlierFull: 'frühere Sitzung (Datum unbekannt)', estimated: 'geschätzt', empty: 'Noch keine Brühungen.', demo: 'Beispieldaten: Noch keine Waage eingerichtet. Einstellungen → Geräte & Dienste → Mavo Lumicurve hinzufügen (Waage vorher aufwecken).', dose: 'Mehl', pickHint: 'Balken antippen zum Auswählen', graphAria: 'Gewichtsverlauf über {s} Sekunden', avg: 'Ø' },
+  en: { title: 'Logbook', all: 'All', espresso: 'Espresso', pourover: 'Filter', ratio: 'Ratio (x)', flow: 'Flow (g/s)', weight: 'Weight (g)', time: 'Time', target: 'Target', inTarget: 'on target', older: 'Older brew', newer: 'Newer brew', pick: 'Select brew', bean: 'Beans', note: 'Note', editNote: 'Edit note', stars: 'stars', chartTime: 'Brew time (s)', chartFlow: 'Flow (g/s)', last: 'last', btnTime: 'Time', btnFlow: 'Flow', earlier: 'earlier', earlierDate: 'Earlier session', earlierFull: 'earlier session (date unknown)', estimated: 'estimated', empty: 'No brews yet.', demo: 'Example data: no scale set up yet. Settings → Devices & services → add Mavo Lumicurve (wake the scale first).', dose: 'dose', pickHint: 'tap a bar to select', graphAria: 'Weight over {s} seconds', avg: 'Ø' },
 };
 // ---- defaults of every option (a key set in the card config always wins; a CSS variable --mlc-* wins over the built-in default)
+function demoBrews() { // example brews for the empty state and `demo: true`: a week of espresso and a few pour-overs
+  const pad = n => String(n).padStart(2, '0'), out = [], now = Date.now();
+  for (let i = 0; i < 14; i++) {
+    const po = i % 5 === 4, t = po ? 150 + (i * 7) % 40 : 22 + (i * 3) % 9, dose = po ? 15 : 18, y = po ? 250 + (i * 11) % 40 : +(34 + (i * 5) % 9 + .4).toFixed(1);
+    const d = new Date(now - (13 - i) * 36e5 * 11), real = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+    const n = po ? 15 : 3, curve = Array.from({ length: n + 1 }, (_, k) => [Math.round(t * k / n), +(y * Math.pow(k / n, po ? 1.1 : 1.6)).toFixed(1)]);
+    out.push({ id: 'demo' + i, seq: i, ts: real, real_ts: real, mode: po ? 'pourover' : 'espresso', valid: true, yield_g: y, time_s: t, flow_gs: +(y / t).toFixed(2), dose_g: dose, ratio: +(y / dose).toFixed(2), curve, stars: i % 3 ? 0 : 4, bean: '', note: '' });
+  }
+  return out;
+}
 const DEF = { language: 'de', theme: 'dark', chart_count: 30, chart_metric: 'time', default_mode: 'all', flow_value: 'auto', show_invalid: false, border_radius: 20, font_scale: 100,
   show_title: true, show_filter: true, show_tiles: true, show_graph: true, show_chart: true, show_stars: true, show_notes: true, show_menu: true, targets: {} };
 const VARS = { // config key -> [css variable, theme variable name, built-in default]
@@ -71,6 +81,7 @@ button.icon{min-width:40px;padding:0}button:disabled{opacity:.35;cursor:default}
 .notes{margin:6px 0 0;display:grid;gap:8px}.notes .st{display:flex;gap:6px;align-items:center}.notes .st button{min-width:40px;padding:0}.notes .st button.on .ic{fill:var(--a)}.notes .st .icon{margin-left:auto}.mut{font-size:.86em;color:var(--mut)}
 input,textarea{font:inherit;color:inherit;padding:9px 12px;border-radius:12px;border:1px solid var(--bd);background:var(--s1)}
 input:focus-visible,textarea:focus-visible{outline:2px solid var(--a);outline-offset:1px}
+.hint{margin:0 0 10px;padding:8px 12px;border-radius:10px;font-size:.8em;background:color-mix(in srgb,var(--a) 18%,transparent)}
 .empty{opacity:.7;padding:20px 0;text-align:center}
 @media (max-width:360px){header .logo{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}`;
@@ -81,12 +92,12 @@ class MavoLumicurveCard extends HTMLElement {
   setConfig(c) {
     // targets: { espresso: {time:[min,max], yield:[..], flow:[..], ratio:[..]}, pourover: {...} }; flat target_time/yield/flow/ratio apply to both modes
     this._cfg = c; this._srv = this._srv || {}; this._c = { ...DEF, ...this._srv, ...c };
-    this._int = !c.entity && !c.brews && !c.brews_url; // no other source given = read from the Mavo Lumicurve integration
+    this._int = !c.entity && !c.brews && !c.brews_url && !c.demo; this._demo = !!c.demo; // no other source given = read from the Mavo Lumicurve integration
     this._L = { ...LABELS[this._c.language] || LABELS.de, ...c.labels }; this._en = this._c.language === 'en';
     this._mode = this._c.default_mode; this._sel = null; this._menu = false; this._nopen = false; this._brews = null;
     this._applyVars();
     if (!this.shadowRoot) { const r = this.attachShadow({ mode: 'open' }); this._wire(r); }
-    this._notes = this._int ? (this._notes || {}) : this._load(); if (c.brews) { this._brews = c.brews; this._draw(); } else if (this._int) this._ws(); else this._fetch();
+    this._notes = this._int ? (this._notes || {}) : this._load(); if (c.demo) { this._brews = demoBrews(); this._draw(); } else if (c.brews) { this._brews = c.brews; this._draw(); } else if (this._int) this._ws(); else this._fetch();
   }
   _applyVars() { // explicit config wins; otherwise the theme variable --mlc-<name>; otherwise the built-in default
     const c = this._c, ha = c.theme === 'ha', set = (k, v) => this.style.setProperty(k, v);
@@ -130,13 +141,14 @@ class MavoLumicurveCard extends HTMLElement {
       this._srv = { targets: r.settings.targets, flow_value: r.settings.flow_value };
       this._c = { ...DEF, ...this._srv, ...this._cfg };
       this._notes = Object.fromEntries(r.brews.filter(b => b.stars || b.bean || b.note).map(b => [b.id, { stars: b.stars, bean: b.bean, note: b.note }]));
-      this._brews = r.brews;
-    } catch { this._brews = this._brews || []; }
+      this._demo = !r.brews.length; this._brews = this._demo ? demoBrews() : r.brews; // nothing synced yet: show examples with a hint
+    } catch { this._demo = true; this._brews = demoBrews(); } // integration not set up
     this._draw();
   }
   async _fetch() { if (!this._c.brews_url) return; try { this._brews = await (await fetch(this._c.brews_url, { cache: 'no-store' })).json(); } catch { this._brews = []; } this._draw(); }
   _load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } }
   async _save() {
+    if (this._demo) return; // example data: ratings stay in memory
     if (this._int) { const o = this._notes[this._selId] || {}; try { await this._h.callWS({ type: 'mavo_lumicurve/note', id: this._selId, stars: o.stars || 0, bean: o.bean || '', note: o.note || '' }); } catch {} return; }
     try { localStorage.setItem(KEY, JSON.stringify(this._notes)); } catch {}
     try { await this._h?.callWS({ type: 'frontend/set_user_data', key: KEY, value: this._notes }); } catch {}
@@ -221,7 +233,7 @@ class MavoLumicurveCard extends HTMLElement {
     const keep = r.activeElement?.dataset?.f, v = keep && r.activeElement.value;
     const header = c.show_title || c.show_filter ? `<header>${c.show_title ? `<div class="logo">${ic('cup')}</div><h2>${esc(c.title ?? L.title)}</h2>` : '<h2></h2>'}
         ${c.show_filter ? `<div class="seg">${['all', 'espresso', 'pourover'].map(k => `<button data-m="${k}" class="${this._mode === k ? 'on' : ''}">${esc(L[k])}</button>`).join('')}</div>` : ''}</header>` : '';
-    r.innerHTML = `<style>${CSS}</style><div class="card">${header}
+    r.innerHTML = `<style>${CSS}</style><div class="card">${header}${this._demo ? `<div class="hint" role="note">${esc(L.demo)}</div>` : ''}
       ${sel ? this._hero(sel, selPos, l.length, l) + (c.show_chart ? this._chart(l) : '') : `<div class="empty">${esc(L.empty)}</div>`}</div>`;
     if (keep) { const el = r.querySelector(`[data-f="${keep}"]`); if (el) { el.focus(); el.setSelectionRange?.(v.length, v.length); } }
   }
