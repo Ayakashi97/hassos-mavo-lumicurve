@@ -10,31 +10,43 @@ German UI names in brackets. Written for Home Assistant OS 2026.11. The card its
 | Getting the **brews** to the card | a JSON file that you update with one command on your Mac (or data pasted into the card) | a Home Assistant integration that syncs the scale by itself (needs a Bluetooth adapter or proxy) |
 | Settings for targets and rules | in the card config | in the integration's Configure screen |
 
-So today the scale is read **by your Mac**, and Home Assistant only shows the result. Steps 1 to 4 below are all you need for that.
+So today the scale is read **by your Mac**, and Home Assistant only shows the result. The steps below are all you need for that.
 
-## Step 1: put the card file into Home Assistant
+## Install the card
 
-1. Get the file `dist/mavo-lumicurve-card.js` from this repository
-   (https://github.com/Ayakashi97/hassos-mavo-lumicurve, folder `dist`, button "Download raw file").
-2. Copy it to the folder `/config/www/mavo-lumicurve/` of Home Assistant (create the folders if they don't exist). Ways to do that:
-   the **Studio Code Server** app (upload by drag and drop), the **Samba** share, or the **Terminal & SSH** app.
-3. Check: opening `http://<your-home-assistant>:8123/local/mavo-lumicurve/mavo-lumicurve-card.js` in the browser shows the JavaScript text.
+### Option A: Marketplace (recommended)
 
-## Step 2: register it as a dashboard resource
+Home Assistant 2026.11 and newer has the Marketplace built in (Settings → Marketplace); older versions use the HACS integration, where "Custom repositories" works the same way.
 
-1. Settings (Einstellungen) → Dashboards → three dots (⋮) top right → **Resources** (Ressourcen). If you don't see Resources, turn on Advanced mode in your user profile.
-2. Add resource: URL `/local/mavo-lumicurve/mavo-lumicurve-card.js?v=0.8.2`, type **JavaScript module**.
-3. Hard refresh the browser (Ctrl/Cmd + Shift + R). In the Companion app: Settings → Companion app → Troubleshooting → Reset frontend cache.
+[![Open your Home Assistant instance and open this repository in the store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Ayakashi97&repository=hassos-mavo-lumicurve&category=plugin)
+
+1. Click the button above, or open Settings (Einstellungen) → **Marketplace**, use the menu (⋮) → **Add from link** (custom repository), and enter
+   `https://github.com/Ayakashi97/hassos-mavo-lumicurve` with the category **Dashboard** (plugin).
+2. Open the repository's entry and click **Download**.
+3. Hard refresh the browser. The Marketplace registers the dashboard resource itself, so do **not** add it again by hand (that would create a duplicate).
+4. Continue with "Give the card its brews" below.
+
+You need once: a GitHub account connected in the Marketplace (required for custom repositories) and the Marketplace notice accepted. Updates appear in the Marketplace like for any other card.
+The steps follow the Marketplace documentation; the My Home Assistant button is the HACS-style link and was not verified on 2026.11. This route has not been tried end to end here yet.
+
+### Option B: by hand
+
+1. Get `dist/mavo-lumicurve-card.js` from this repository (folder `dist`, button "Download raw file") and copy it to `/config/www/mavo-lumicurve/` of Home Assistant
+   (create the folders). Ways: the **Studio Code Server** app (drag and drop), the **Samba** share, or the **Terminal & SSH** app.
+   Check: `http://<your-home-assistant>:8123/local/mavo-lumicurve/mavo-lumicurve-card.js` shows the JavaScript text.
+2. Settings → Dashboards → three dots (⋮) top right → **Resources** (Ressourcen; turn on Advanced mode in your profile if it is missing).
+   Add: URL `/local/mavo-lumicurve/mavo-lumicurve-card.js?v=0.8.2`, type **JavaScript module**.
+3. Hard refresh (Ctrl/Cmd + Shift + R). In the Companion app: Settings → Companion app → Troubleshooting → Reset frontend cache.
 
 When you update the file later, change `?v=0.8.2` to the new version number. Home Assistant caches `/local` files for about a month, and a new URL forces a reload.
 
-## Step 3: give the card its brews
+## Give the card its brews
 
 **Option A: a file (recommended)**
 
 1. On your Mac, in the repository: `./run.sh` (wake the scale first). It syncs the scale, parses the log, and writes `data/brews_ha.json`.
    (Or just `python3 tools/export.py` if you already have `data/brews.json`.)
-2. Copy `data/brews_ha.json` to `/config/www/mavo-lumicurve/brews.json` in Home Assistant (same ways as in step 1).
+2. Copy `data/brews_ha.json` to `/config/www/mavo-lumicurve/brews.json` in Home Assistant (same ways as in Option B).
 3. Use `brews_url: /local/mavo-lumicurve/brews.json` in the card.
 4. Repeat 1 and 2 whenever you want fresh brews. The card always loads the newest file, no cache clearing needed.
    The scale keeps only about 3 to 4 weeks in its log, so sync at least that often.
@@ -43,7 +55,7 @@ When you update the file later, change `?v=0.8.2` to the new version number. Hom
 
 Paste the list into the card config as `brews:`. It never updates. The test dashboard of this project works this way.
 
-## Step 4: add the card to a dashboard
+## Add the card to a dashboard
 
 1. Open the dashboard → pencil (edit) → **Add card** → search for **Brew logbook (Mavo Lumicurve)**.
 2. The visual editor opens. Pick the language, colours and targets, or switch to the code editor and paste:
@@ -80,8 +92,8 @@ It needs Bluetooth in range of the scale:
 
 | Problem | Likely cause and fix |
 |---|---|
-| The card is not in the "Add card" list | The resource isn't loaded: check step 2 (type must be JavaScript module, URL exact), then hard refresh. |
-| "Custom element doesn't exist: mavo-lumicurve-card" | Same: wrong resource URL, or the file isn't in `/config/www/mavo-lumicurve/`. Open the URL from step 1 to check. |
+| The card is not in the "Add card" list | The resource isn't loaded: Marketplace install not finished, or (by hand) the type must be JavaScript module and the URL exact. Then hard refresh. |
+| "Custom element doesn't exist: mavo-lumicurve-card" | Same: wrong resource URL, or the file isn't in `/config/www/mavo-lumicurve/`. Open the file URL from Option B to check. |
 | The card shows "Noch keine Brühungen" / "No brews yet" | The data file is missing or empty. Open `/local/mavo-lumicurve/brews.json` in the browser. Check `brews_url`. |
 | An old version still shows | Cached file: change `?v=` in the resource URL and hard refresh. |
 | Everything says "früher" | These brews come from before the scale's last cold boot, so their real time is unknown. New brews get real times after the next sync. |
@@ -90,5 +102,5 @@ It needs Bluetooth in range of the scale:
 
 ## Updating and removing
 
-- **Update:** replace the file, change `?v=` in the resource URL, hard refresh. Version changes are listed in the [CHANGELOG](../CHANGELOG.md). Version 0.8.0 renamed the card; dashboards that still use the old name must change the card `type` and the resource URL.
-- **Remove:** delete the card from your dashboards, delete the resource (step 2), delete `/config/www/mavo-lumicurve/`.
+- **Update:** Marketplace: click Update. By hand: replace the file, change `?v=` in the resource URL, hard refresh. Version changes are listed in the [CHANGELOG](../CHANGELOG.md). Version 0.8.0 renamed the card; dashboards that still use the old name must change the card `type` and the resource URL.
+- **Remove:** delete the card from your dashboards, remove it in the Marketplace, or (by hand) delete the resource and `/config/www/mavo-lumicurve/`.

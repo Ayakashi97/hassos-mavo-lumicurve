@@ -10,8 +10,9 @@ Status: early. Tested on one scale (firmware 008.06) and Home Assistant 2026.11.
 
 The card works in Home Assistant today. The scale is read by your Mac, and Home Assistant shows the result. A Home Assistant integration that syncs by itself is planned.
 
-1. Copy `dist/mavo-lumicurve-card.js` to `/config/www/mavo-lumicurve/` and add it under Settings → Dashboards → ⋮ → Resources
-   (`/local/mavo-lumicurve/mavo-lumicurve-card.js?v=0.8.2`, type JavaScript module).
+1. **Install the card from the Marketplace:** [![Open your Home Assistant instance and open this repository in the store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Ayakashi97&repository=hassos-mavo-lumicurve&category=plugin)
+   or Settings → Marketplace → ⋮ → Add from link → this repository, category Dashboard → Download. (By hand instead: copy `dist/mavo-lumicurve-card.js` to
+   `/config/www/mavo-lumicurve/` and add it under Settings → Dashboards → ⋮ → Resources as a JavaScript module.)
 2. On your Mac run `./run.sh`, then copy `data/brews_ha.json` to `/config/www/mavo-lumicurve/brews.json`.
 3. Add the card "Brew logbook (Mavo Lumicurve)" with `brews_url: /local/mavo-lumicurve/brews.json`.
 
@@ -29,7 +30,7 @@ All card options, colours and theme variables: **[docs/CONFIG.md](docs/CONFIG.md
 ### Install
 See "Run it in Home Assistant" above and [docs/INSTALL-HA.md](docs/INSTALL-HA.md).
 
-HACS: the repository has the HACS layout (category "Dashboard", file `dist/mavo-lumicurve-card.js`), but adding it as a custom repository is not tested yet.
+Marketplace/HACS: the repository has the HACS layout (category "Dashboard", file `dist/mavo-lumicurve-card.js`); adding it as a custom repository is documented but not yet tested end to end.
 
 ### Minimal configuration
 ```yaml
