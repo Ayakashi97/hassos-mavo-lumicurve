@@ -1,6 +1,6 @@
 # Run it in Home Assistant
 
-German UI names in brackets. Tested with Home Assistant OS 2026.11. You need an admin account.
+German UI names in brackets. Written for Home Assistant OS 2026.11. The card itself was tested on a local test page and as an inline resource in Home Assistant; copying the file to `/config/www` is the standard way but was not tried on this system. You need an admin account.
 
 ## What works today and what comes later
 
@@ -23,10 +23,10 @@ So today the scale is read **by your Mac**, and Home Assistant only shows the re
 ## Step 2: register it as a dashboard resource
 
 1. Settings (Einstellungen) → Dashboards → three dots (⋮) top right → **Resources** (Ressourcen). If you don't see Resources, turn on Advanced mode in your user profile.
-2. Add resource: URL `/local/mavo-lumicurve/mavo-lumicurve-card.js?v=0.8.0`, type **JavaScript module**.
+2. Add resource: URL `/local/mavo-lumicurve/mavo-lumicurve-card.js?v=0.8.2`, type **JavaScript module**.
 3. Hard refresh the browser (Ctrl/Cmd + Shift + R). In the Companion app: Settings → Companion app → Troubleshooting → Reset frontend cache.
 
-When you update the file later, change `?v=0.8.0` to the new version number. Home Assistant caches `/local` files for about a month, and a new URL forces a reload.
+When you update the file later, change `?v=0.8.2` to the new version number. Home Assistant caches `/local` files for about a month, and a new URL forces a reload.
 
 ## Step 3: give the card its brews
 
@@ -68,7 +68,7 @@ Every option, the colours, theme variables and text overrides are in [CONFIG.md]
 
 ## Later: the integration (not built yet)
 
-The plan is in [HA.md](HA.md): the scale is found automatically in Settings → Devices & services, syncs by itself, and all settings move into its Configure screen.
+The plan is in [ROADMAP.md](ROADMAP.md): the scale is found automatically in Settings → Devices & services, syncs by itself, and all settings move into its Configure screen.
 It needs Bluetooth in range of the scale:
 
 1. A **USB Bluetooth adapter** in the Home Assistant machine (check that it really is a Bluetooth adapter; a TP-Link Wi-Fi stick looks similar), or an **ESP32 with the ESPHome Bluetooth proxy** next to the scale.

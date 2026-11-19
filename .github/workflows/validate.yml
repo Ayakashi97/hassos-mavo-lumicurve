@@ -3,6 +3,7 @@ on: [push, pull_request, workflow_dispatch]
 jobs:
   hacs:
     runs-on: ubuntu-latest
+    continue-on-error: true  # needs repository description and topics on GitHub
     steps:
       - uses: actions/checkout@v4
       - uses: hacs/action@main

@@ -1,4 +1,4 @@
-/* mavo-lumicurve-card · v0.8.1 · Mavo Lumicurve brew logbook
+/* mavo-lumicurve-card · v0.8.2 · Mavo Lumicurve brew logbook
    Everything is configurable: see docs/CONFIG.md (options, colours, CSS variables, labels, where each thing lives).
    Source of the brews: `entity` (attribute `brews`), `brews_url` (JSON file) or `brews` (inline list).
    Notes/stars live in HA user data (frontend/set_user_data), localStorage as fallback. */

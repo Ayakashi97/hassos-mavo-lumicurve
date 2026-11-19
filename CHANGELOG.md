@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.2
+- Cleanup: removed unused tools (`scan.py`, `watch.py`) and outdated plans; docs are now `INSTALL-HA.md`, `CONFIG.md` and `ROADMAP.md`. No change to the card's behaviour.
+
 ## 0.8.1
 - The card loads the brews file without HTTP cache. New `tools/export.py`; `run.sh` writes `data/brews_ha.json`. New guide `docs/INSTALL-HA.md`.
 
