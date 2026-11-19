@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-11-19
+
 ### Added
 - Install guide: Marketplace route (tested on Home Assistant 2026.11) with a My Home Assistant button next to the manual route.
 - Release process: `docs/RELEASING.md`, `tools/release.py`, and a GitHub workflow that publishes a release with the card file attached.
@@ -70,7 +72,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.3...HEAD
+[0.8.3]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.7.0...v0.8.0

@@ -35,10 +35,10 @@ Tested on Home Assistant 2026.11: adding the repository as a custom source and d
    (create the folders). Ways: the **Studio Code Server** app (drag and drop), the **Samba** share, or the **Terminal & SSH** app.
    Check: `http://<your-home-assistant>:8123/local/mavo-lumicurve/mavo-lumicurve-card.js` shows the JavaScript text.
 2. Settings → Dashboards → three dots (⋮) top right → **Resources** (Ressourcen; turn on Advanced mode in your profile if it is missing).
-   Add: URL `/local/mavo-lumicurve/mavo-lumicurve-card.js?v=0.8.2`, type **JavaScript module**.
+   Add: URL `/local/mavo-lumicurve/mavo-lumicurve-card.js?v=0.8.3`, type **JavaScript module**.
 3. Hard refresh (Ctrl/Cmd + Shift + R). In the Companion app: Settings → Companion app → Troubleshooting → Reset frontend cache.
 
-When you update the file later, change `?v=0.8.2` to the new version number. Home Assistant caches `/local` files for about a month, and a new URL forces a reload.
+When you update the file later, change `?v=0.8.3` to the new version number. Home Assistant caches `/local` files for about a month, and a new URL forces a reload.
 
 ## Give the card its brews
 
