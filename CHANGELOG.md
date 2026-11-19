@@ -1,7 +1,12 @@
 # Changelog
 
+## 0.8.0 (breaking: renamed)
+- The card is now **`custom:mavo-lumicurve-card`** (was `custom:nofree-brew-card`); file `dist/mavo-lumicurve-card.js`; editor element `mavo-lumicurve-card-editor`.
+- Theme variables are `--mlc-*` (were `--nbc-*`). Ratings and notes are stored under the key `mavo_lumicurve_notes`, so notes entered during tests under the old key are not carried over.
+- To upgrade a dashboard: change the resource to the new file and the card `type` to `custom:mavo-lumicurve-card`.
+
 ## 0.7.0
-- Card fully customizable: colours, language (de/en), single texts, which parts are shown, targets per type, theme variables `--nbc-*`, visual editor. See `docs/CONFIG.md`.
+- Card fully customizable: colours, language (de/en), single texts, which parts are shown, targets per type, theme variables `--mlc-*`, visual editor. See `docs/CONFIG.md`.
 - Parser rules in `settings.json`.
 
 ## 0.6.0

@@ -15,16 +15,16 @@ Status: early and private. Tested on one scale (firmware 008.06) and Home Assist
 - German and English; works on phones and light themes.
 
 ### Install (manual)
-1. Copy `dist/nofree-brew-card.js` to `/config/www/community/nofree-brew-card/` (or any folder under `/config/www`).
-2. Settings → Dashboards → ⋮ → Resources → Add: URL `/local/community/nofree-brew-card/nofree-brew-card.js`, type JavaScript module.
+1. Copy `dist/mavo-lumicurve-card.js` to `/config/www/community/mavo-lumicurve-card/` (or any folder under `/config/www`).
+2. Settings → Dashboards → ⋮ → Resources → Add: URL `/local/community/mavo-lumicurve-card/mavo-lumicurve-card.js`, type JavaScript module.
 3. Add the card "Brew logbook (Mavo Lumicurve)" to a dashboard.
 
-HACS: the repository is ready for HACS (category "Dashboard", file `dist/nofree-brew-card.js`). HACS needs access to the repository, so adding it as a custom
+HACS: the repository is ready for HACS (category "Dashboard", file `dist/mavo-lumicurve-card.js`). HACS needs access to the repository, so adding it as a custom
 repository will most likely only work once it is public.
 
 ### Minimal configuration
 ```yaml
-type: custom:nofree-brew-card
+type: custom:mavo-lumicurve-card
 entity: sensor.mavo_lumicurve_brews     # attribute "brews"; or brews_url / brews (inline list)
 targets:
   espresso: { time: [22, 30], yield: [34, 42] }
@@ -59,7 +59,7 @@ macOS needs Bluetooth permission for the terminal; only one program can be conne
 
 | Path | Content |
 |---|---|
-| `dist/nofree-brew-card.js` | the card (single file, no build step) |
+| `dist/mavo-lumicurve-card.js` | the card (single file, no build step) |
 | `card/test.html` | local test page with presets |
 | `tools/`, `run.sh`, `settings.json.example` | scale discovery, sync, parser |
 | `tests/` | parser tests with a real log excerpt |

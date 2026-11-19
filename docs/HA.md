@@ -1,9 +1,11 @@
 # Home Assistant: test deployment and the long-term plan
 
 ## Test deployment (2026-11-19, HA 2026.11.1)
+> The test deployment below still runs card v0.6 under the old element name. After the rename to v0.8 the resource content and the dashboard card `type` (`custom:mavo-lumicurve-card`) must be updated together.
+
 - Card hosted as an **inline dashboard resource** (module, 23,036 bytes, sha256 `06ce1fd0…23d8`, resource id `ab05e666d7ee435e9f9dbbe12f42709f`),
-  same way as the floorplan card. Update with `ha_config_set_dashboard_resource(resource_id=…, edits=[…])` or recreate from `dist/nofree-brew-card.js`.
-- New **admin-only dashboard** `kaffee-log` (sidebar "Kaffee", view `kaffee`) with one `custom:nofree-brew-card`.
+  same way as the floorplan card. Update with `ha_config_set_dashboard_resource(resource_id=…, edits=[…])` or recreate from `dist/mavo-lumicurve-card.js`.
+- New **admin-only dashboard** `kaffee-log` (sidebar "Kaffee", view `kaffee`) with one `custom:mavo-lumicurve-card`.
   Data is **inlined in the card config** (111 brews, about 19 KB: `data/brews_ha.json`). That is only for the test; nothing updates it.
 - Brew notes and stars use `frontend/set_user_data`: they are stored per HA user, not shared.
 - The existing dashboards and resources were not touched. Remove the test: delete dashboard `kaffee-log` and the resource id above.
@@ -48,7 +50,7 @@ Today the settings are spread over three places (card YAML, `settings.json`, `da
 |---|---|---|
 | **Scale and data** | integration: Settings → Devices & services → Mavo Lumicurve (config flow + **Configure**) | which scale (found by auto-discovery, no file), targets for espresso and filter (time, weight, flow, ratio), what counts as a filter brew (min. seconds), noise limits, dose range, flow definition (average or peak), how many days of curves to keep, nightly export on/off |
 | **Look of one card** | the card (visual editor or YAML) | colours, language, texts, which parts are shown, chart bars, corner radius |
-| **Look of all cards** | HA theme variables `--nbc-*` | accent and tile colours |
+| **Look of all cards** | HA theme variables `--mlc-*` | accent and tile colours |
 | **Ratings, bean, notes** | stored with the brew in the integration store (shared by all users) | stars, bean, text |
 
 How the card gets the integration's settings: the sensor/websocket data carries them next to the brews (`targets`, `flow_value`, labels of the types).

@@ -1,8 +1,8 @@
-/* nofree-brew-card · v0.7 · Mavo Lumicurve brew logbook
+/* mavo-lumicurve-card · v0.8 · Mavo Lumicurve brew logbook
    Everything is configurable: see docs/CONFIG.md (options, colours, CSS variables, labels, where each thing lives).
    Source of the brews: `entity` (attribute `brews`), `brews_url` (JSON file) or `brews` (inline list).
    Notes/stars live in HA user data (frontend/set_user_data), localStorage as fallback. */
-const KEY = 'nofree_brew_notes';
+const KEY = 'mavo_lumicurve_notes';
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const IC = { // 24x24 stroke icons
   cup: '<path d="M5 8h11v6a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5V8zM16 10h1.5a2.5 2.5 0 0 1 0 5H16M8 3v2M12 3v2"/>',
@@ -17,7 +17,7 @@ const LABELS = {
   de: { title: 'Logbuch', all: 'Alle', espresso: 'Espresso', pourover: 'Filter', ratio: 'Verhältnis (x)', flow: 'Fluss (g/s)', weight: 'Gewicht (g)', time: 'Zeit', target: 'Ziel', inTarget: 'im Ziel', older: 'Älterer Bezug', newer: 'Neuerer Bezug', pick: 'Bezug auswählen', bean: 'Bohne', note: 'Notiz', editNote: 'Notiz bearbeiten', stars: 'Sterne', chartTime: 'Bezugszeit (s)', chartFlow: 'Durchfluss (g/s)', last: 'letzte', btnTime: 'Zeit', btnFlow: 'Fluss', earlier: 'früher', earlierDate: 'Frühere Sitzung', earlierFull: 'frühere Sitzung (Datum unbekannt)', estimated: 'geschätzt', empty: 'Noch keine Brühungen.', dose: 'Mehl', pickHint: 'Balken antippen zum Auswählen', graphAria: 'Gewichtsverlauf über {s} Sekunden', avg: 'Ø' },
   en: { title: 'Logbook', all: 'All', espresso: 'Espresso', pourover: 'Filter', ratio: 'Ratio (x)', flow: 'Flow (g/s)', weight: 'Weight (g)', time: 'Time', target: 'Target', inTarget: 'on target', older: 'Older brew', newer: 'Newer brew', pick: 'Select brew', bean: 'Beans', note: 'Note', editNote: 'Edit note', stars: 'stars', chartTime: 'Brew time (s)', chartFlow: 'Flow (g/s)', last: 'last', btnTime: 'Time', btnFlow: 'Flow', earlier: 'earlier', earlierDate: 'Earlier session', earlierFull: 'earlier session (date unknown)', estimated: 'estimated', empty: 'No brews yet.', dose: 'dose', pickHint: 'tap a bar to select', graphAria: 'Weight over {s} seconds', avg: 'Ø' },
 };
-// ---- defaults of every option (a key set in the card config always wins; a CSS variable --nbc-* wins over the built-in default)
+// ---- defaults of every option (a key set in the card config always wins; a CSS variable --mlc-* wins over the built-in default)
 const DEF = { language: 'de', theme: 'dark', chart_count: 30, chart_metric: 'time', default_mode: 'all', flow_value: 'auto', show_invalid: false, border_radius: 20, font_scale: 100,
   show_title: true, show_filter: true, show_tiles: true, show_graph: true, show_chart: true, show_stars: true, show_notes: true, show_menu: true, targets: {} };
 const VARS = { // config key -> [css variable, theme variable name, built-in default]
@@ -75,8 +75,8 @@ input:focus-visible,textarea:focus-visible{outline:2px solid var(--a);outline-of
 @media (max-width:360px){header .logo{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}`;
 
-class NofreeBrewCard extends HTMLElement {
-  static getConfigElement() { return document.createElement('nofree-brew-card-editor'); }
+class MavoLumicurveCard extends HTMLElement {
+  static getConfigElement() { return document.createElement('mavo-lumicurve-card-editor'); }
   static getStubConfig() { return { entity: 'sensor.mavo_lumicurve_brews', targets: { espresso: { time: [22, 30], yield: [34, 42] }, pourover: { time: [150, 210], yield: [250, 310] } } }; }
   setConfig(c) {
     // targets: { espresso: {time:[min,max], yield:[..], flow:[..], ratio:[..]}, pourover: {...} }; flat target_time/yield/flow/ratio apply to both modes
@@ -87,9 +87,9 @@ class NofreeBrewCard extends HTMLElement {
     if (!this.shadowRoot) { const r = this.attachShadow({ mode: 'open' }); this._wire(r); }
     this._notes = this._load(); if (c.brews) { this._brews = c.brews; this._draw(); } else this._fetch();
   }
-  _applyVars() { // explicit config wins; otherwise the theme variable --nbc-<name>; otherwise the built-in default
+  _applyVars() { // explicit config wins; otherwise the theme variable --mlc-<name>; otherwise the built-in default
     const c = this._c, ha = c.theme === 'ha', set = (k, v) => this.style.setProperty(k, v);
-    const pick = (key, name, def) => (c[key] !== undefined && c[key] !== '' ? c[key] : `var(--nbc-${name}, ${def})`);
+    const pick = (key, name, def) => (c[key] !== undefined && c[key] !== '' ? c[key] : `var(--mlc-${name}, ${def})`);
     for (const [key, [v, name, def]] of Object.entries(VARS)) set(v, pick(key, name, def));
     const haBg = 'var(--ha-card-background, var(--card-background-color, #2a2217))';
     set('--tx', ha ? 'var(--primary-text-color, #f4efe6)' : pick('text_color', 'text', '#f4efe6'));
@@ -146,9 +146,9 @@ class NofreeBrewCard extends HTMLElement {
     const max = Math.min(Math.max(fl ? 1 : 10, vs[vs.length - 1], tt ? tt[1] : 0), cap), X0 = 22, w = (300 - X0) / d.length, y = v => 64 - 50 * Math.min(v, max) / max;
     const fmt = v => fl ? v.toFixed(1) : String(v), step = Math.ceil((fmt(max).length * 4 + 1) / w); // label every n-th bar so numbers never overlap
     return `<div class="chart"><div class="lab" style="display:flex;justify-content:space-between;align-items:center">${fl ? L.chartFlow : L.chartTime} · ${L.last} ${d.length}${mode === 'pourover' ? ' ' + L.pourover : ''}<span class="seg">${[['time', L.btnTime], ['flow', L.btnFlow]].map(([k, t]) => `<button data-c="${k}" class="${(fl ? 'flow' : 'time') === k ? 'on' : ''}" style="min-height:32px;padding:0 10px">${esc(t)}</button>`).join('')}</span></div><svg viewBox="0 0 300 72" role="img" aria-label="${fl ? L.chartFlow : L.chartTime}; ${L.pickHint}">
-      ${tt ? `<rect class="band" x="${X0}" y="${y(tt[1])}" width="${300 - X0}" height="${y(tt[0]) - y(tt[1])}" rx="3"/>` : ''}
+      ${tt ? `<rect class="band" x="${X0}" y="${y(tt[1])}" width="${300 - X0}" height="${Math.max(0, y(tt[0]) - y(tt[1]))}" rx="3"/>` : ''}
       <text x="${X0 - 3}" y="${y(max) + 3}" text-anchor="end">${fmt(max)}</text><text x="${X0 - 3}" y="67" text-anchor="end">0</text><line class="ax" x1="${X0}" x2="300" y1="64.5" y2="64.5"/>
-      ${d.map((b, i) => `<rect class="b ${this._st(val(b), tt) === 'out' ? 'out' : ''} ${b.id === this._selId ? 'cur' : ''}" data-pick="${esc(b.id)}" x="${X0 + i * w + 1}" y="${y(val(b))}" width="${Math.max(w - 2, 1)}" height="${64 - y(val(b))}" rx="2"><title>${esc(this._disp(b).full)}: ${fmt(val(b))}</title></rect>
+      ${d.map((b, i) => `<rect class="b ${this._st(val(b), tt) === 'out' ? 'out' : ''} ${b.id === this._selId ? 'cur' : ''}" data-pick="${esc(b.id)}" x="${X0 + i * w + 1}" y="${y(val(b))}" width="${Math.max(w - 2, 1)}" height="${Math.max(0, 64 - y(val(b)))}" rx="2"><title>${esc(this._disp(b).full)}: ${fmt(val(b))}</title></rect>
         ${(d.length - 1 - i) % step === 0 ? `<text class="vl ${b.id === this._selId ? 'cur' : ''}" x="${X0 + i * w + w / 2}" y="${y(val(b)) - 2}" text-anchor="middle">${fmt(val(b))}</text>` : ''}`).join('')}</svg></div>`;
   }
   _nice(v) { return [20, 40, 70, 100, 140, 200, 300, 400, 600].find(s => s >= v) || Math.ceil(v / 100) * 100; }
@@ -246,7 +246,7 @@ const EDITOR_LABELS = {
   show_title: 'Title', show_filter: 'Espresso/Filter buttons', show_tiles: 'Four tiles', show_graph: 'Weight graph', show_chart: 'History chart', show_stars: 'Stars', show_notes: 'Notes button', show_menu: 'Brew dropdown',
   default_mode: 'Start filter', chart_metric: 'Chart shows', flow_value: 'Flow tile shows', chart_count: 'Bars in the chart', border_radius: 'Corner radius (px)', font_scale: 'Text size', show_invalid: 'Show tare/noise events',
 };
-class NofreeBrewCardEditor extends HTMLElement {
+class MavoLumicurveCardEditor extends HTMLElement {
   setConfig(c) { this._config = c || {}; this._render(); }
   set hass(h) { this._hass = h; if (this._form) this._form.hass = h; }
   _toData(c) {
@@ -282,6 +282,6 @@ class NofreeBrewCardEditor extends HTMLElement {
     this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: cfg }, bubbles: true, composed: true }));
   }
 }
-if (!customElements.get('nofree-brew-card')) customElements.define('nofree-brew-card', NofreeBrewCard);
-if (!customElements.get('nofree-brew-card-editor')) customElements.define('nofree-brew-card-editor', NofreeBrewCardEditor);
-(window.customCards = window.customCards || []).push({ type: 'nofree-brew-card', name: 'Brew logbook (Mavo Lumicurve)', description: 'Last brew like on the scale, targets, flow graph, ratings and a brew dropdown. Fully customizable.', preview: false });
+if (!customElements.get('mavo-lumicurve-card')) customElements.define('mavo-lumicurve-card', MavoLumicurveCard);
+if (!customElements.get('mavo-lumicurve-card-editor')) customElements.define('mavo-lumicurve-card-editor', MavoLumicurveCardEditor);
+(window.customCards = window.customCards || []).push({ type: 'mavo-lumicurve-card', name: 'Brew logbook (Mavo Lumicurve)', description: 'Last brew like on the scale, targets, flow graph, ratings and a brew dropdown. Fully customizable.', preview: false });

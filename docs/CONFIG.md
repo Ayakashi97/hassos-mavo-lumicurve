@@ -8,14 +8,14 @@ the **parsing rules** in `settings.json`. Details below.
 | What | Where | How to change it |
 |---|---|---|
 | Card look, texts, what is shown, targets | the card's config in the dashboard | dashboard edit mode → card → pencil (visual editor), or "Show code editor" (YAML) |
-| Colours via the HA theme | theme variables `--nbc-*` (section 3) | `frontend: themes:` in the HA theme file, or `card_mod` on one card |
+| Colours via the HA theme | theme variables `--mlc-*` (section 3) | `frontend: themes:` in the HA theme file, or `card_mod` on one card |
 | Brews shown by the card | `entity` (attribute `brews`), `brews_url` (JSON file) or `brews` (inline list) | card config |
-| Ratings, bean, notes per brew | HA user data (`frontend/set_user_data`, key `nofree_brew_notes`), browser `localStorage` as fallback | in the card (stars, pencil); per HA user, not shared |
+| Ratings, bean, notes per brew | HA user data (`frontend/set_user_data`, key `mavo_lumicurve_notes`), browser `localStorage` as fallback | in the card (stars, pencil); per HA user, not shared |
 | Which scale to sync | `data/lumicurve.json` (`address`, `name`) | `tools/discover.py` writes it; delete the file to search by name again |
 | Raw logs and parsed brews | `data/scale_log_<time>.txt`, `data/brews.json` | `run.sh` or `tools/sync.py` + `tools/parse.py`; `data/` is not in git |
 | Rules of the parser (what is a filter brew, what is noise, dose range, anchor delay) | `settings.json` in the repo root (optional) | copy `settings.json.example`, change values; defaults are at the top of `tools/parse.py` |
 | Test page presets | `card/test.html` (`presets`) | edit the JS object |
-| Card file in Home Assistant | dashboard resource `ab05e666d7ee435e9f9dbbe12f42709f` (inline) | `ha_config_set_dashboard_resource(resource_id=…, content=…)`; source is `dist/nofree-brew-card.js` |
+| Card file in Home Assistant | dashboard resource `ab05e666d7ee435e9f9dbbe12f42709f` (inline) | `ha_config_set_dashboard_resource(resource_id=…, content=…)`; source is `dist/mavo-lumicurve-card.js` |
 | Test dashboard | `kaffee-log` (admin only), card config inside the dashboard | Settings → Dashboards, or the editor |
 | Long-term data in HA (later) | integration store, see `docs/HA.md` | not built yet |
 
@@ -86,25 +86,25 @@ For every colour there is a CSS variable. Priority: **card config > theme variab
 
 | variable | same as |
 |---|---|
-| `--nbc-accent` | `accent` |
-| `--nbc-ratio`, `--nbc-flow`, `--nbc-weight`, `--nbc-time` | the four tile colours |
-| `--nbc-in`, `--nbc-out` | `color_in`, `color_out` |
-| `--nbc-pill` | `color_pill` |
-| `--nbc-text`, `--nbc-bg`, `--nbc-bg2` | `text_color`, `background`, `background_end` (theme `dark` only) |
+| `--mlc-accent` | `accent` |
+| `--mlc-ratio`, `--mlc-flow`, `--mlc-weight`, `--mlc-time` | the four tile colours |
+| `--mlc-in`, `--mlc-out` | `color_in`, `color_out` |
+| `--mlc-pill` | `color_pill` |
+| `--mlc-text`, `--mlc-bg`, `--mlc-bg2` | `text_color`, `background`, `background_end` (theme `dark` only) |
 
 ```yaml
 # HA theme (frontend: themes:) – all brew cards change together
 my_theme:
-  nbc-accent: "#4cc9f0"
-  nbc-in: "#80ed99"
+  mlc-accent: "#4cc9f0"
+  mlc-in: "#80ed99"
 ```
 ```yaml
 # one card, with card-mod
-type: custom:nofree-brew-card
+type: custom:mavo-lumicurve-card
 entity: sensor.mavo_lumicurve_brews
 card_mod:
   style: |
-    :host { --nbc-accent: hotpink; }
+    :host { --mlc-accent: hotpink; }
 ```
 
 ## 4. Text keys for `labels`

@@ -19,4 +19,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node --check dist/nofree-brew-card.js
+      - run: node --check dist/mavo-lumicurve-card.js
