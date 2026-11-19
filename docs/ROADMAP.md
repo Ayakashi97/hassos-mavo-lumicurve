@@ -86,10 +86,29 @@ Month view, per-bean averages, CSV export, swipe between brews, units (g/oz).
 So the logbook never depends on the recorder. The automatic statistics only describe "the last brew" per hour and are timed by the sync, not by the brew, so they are a rough trend, not a record.
 Exact per-brew statistics would need `async_add_external_statistics` with the brews' real times. Statistics are hourly buckets, so several brews in one hour must be combined, and brews without a real time cannot be placed. Worth it only if you want Statistics-graph cards or the Energy-style compare views for coffee; the card's own history chart already covers the logbook.
 
-Planned, in order:
-1. **First live run** with the Bluetooth adapter (UB500, 2026-11-20): discovery, first sync, reconnect behaviour, the sync interval. Fix what the real system shows.
-2. **Diagnostics** download (counts, last error, settings, no personal data) and a **Repair** when no Bluetooth adapter exists.
-3. **Event entity** per new brew, so automations can react ("brew finished").
-4. **Export** of the brews as CSV/JSON from the card or a service.
-5. Optional: external statistics (above), scale record download `02 01 03`, setting the scale clock so new brews always get real times.
-6. Before 1.0: licence, brand icon, Home Assistant integration quality checks (`hassfest`, type hints), tests with `pytest-homeassistant-custom-component`.
+Planned, in order (each step ends with something you can check):
+
+**1. First live run (adapter arrives 2026-11-20)**
+- Plug in the UB500, reboot the whole system, check the Host log for `hci0`, add the Bluetooth integration.
+- Install the integration (Marketplace, category Integration), restart, wake the scale, add it. Check: device with sensors, log line `Synced ... N new`, brews in the card.
+- Watch: connect time-outs, a second sync within the interval, the scale going to sleep mid-download, a phone app holding the connection. Fix what shows up; add the case to the tests.
+- Done when: a fresh brew appears in the card by itself within a minute of waking the scale.
+
+**2. Right times for every brew (most important)**
+- Today a brew gets its real time only if a sync happens in the same power-on run of the scale; the time is then frozen. A run that never gets synced stays "earlier".
+- Write the scale's clock on every sync (`04 06` + Unix time LE + UTC offset + `01` to `fff1`; untested). Check on the scale that the clock changed and that new log lines carry the real date. If it works, all later brews are exact and the reconstruction is only a fallback.
+- Until then: sync at every wake (done), and show how many brews have no real time in diagnostics.
+- Done when: a brew made after a cold boot has the correct real time without any reconstruction.
+
+**3. Diagnostics and repairs**
+- Diagnostics download (brew counts, last sync, last error, settings; no notes). Repair issue when no Bluetooth adapter or proxy exists, or the scale was not seen for 14 days.
+
+**4. Event entity** per new brew (type, yield, time) for automations.
+
+**5. Statistics with the right time** (only after step 2): `async_add_external_statistics`, one series each for yield, time and brew count, hourly buckets from the real times; brews without a real time are skipped. Add a service to rebuild them from the store.
+
+**6. Export** brews as CSV/JSON (service plus a card button).
+
+**7. Before 1.0:** licence, brand icon, `hassfest`, type hints, tests with `pytest-homeassistant-custom-component` (ask before installing), repository description and topics on GitHub so the Marketplace check passes, a first GitHub release 0.9.0.
+
+Optional: the scale's record download `02 01 03` (exact weight curves, also for espresso), matching the scale's own flow number.
