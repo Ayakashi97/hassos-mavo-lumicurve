@@ -35,6 +35,8 @@ By hand instead: copy the folder `custom_components/mavo_lumicurve` of this repo
 
 ## 3. Add the scale
 
+**No Bluetooth yet?** Settings → Devices & services → Add integration → Mavo Lumicurve → with no scale in range it offers an entry **without a scale**. That installs the card, which then shows example data and a hint. When a scale is discovered later and added, it replaces that entry.
+
 Wake the scale (put something on it). Settings → Devices & services: **Mavo Lumicurve** appears under *Discovered* → **Add**. If not, use **Add integration** → Mavo Lumicurve; the scale must be awake while the list loads.
 
 The device has: last brew yield, time, flow and ratio, brew count, battery, last sync, and a **Sync now** button (wake the scale first).

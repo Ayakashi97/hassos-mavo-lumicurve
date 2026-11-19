@@ -9,6 +9,10 @@
           "address": "Scale"
         }
       },
+      "no_scale": {
+        "title": "No scale found",
+        "description": "No scale is in range of a Bluetooth adapter or proxy. You can still install the card now: it shows example data until a scale is added (wake the scale, it is then discovered and replaces this entry)."
+      },
       "confirm": {
         "description": "Set up {name}? Home Assistant will sync its brew log over Bluetooth."
       }

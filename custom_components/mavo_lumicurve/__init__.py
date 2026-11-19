@@ -14,7 +14,7 @@ from .coordinator import MavoCoordinator
 from .websocket_api import async_register
 
 PLATFORMS = ["sensor", "button"]
-type MavoConfigEntry = ConfigEntry[MavoCoordinator]
+type MavoConfigEntry = ConfigEntry[MavoCoordinator | None]
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -27,6 +27,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: MavoConfigEntry) -> bool:
+    if not entry.data.get("address"):  # placeholder entry: only serves the card (example data) until a scale is added
+        entry.runtime_data = None
+        return True
+    for other in hass.config_entries.async_entries(DOMAIN):  # a real scale replaces the placeholder
+        if not other.data.get("address"):
+            hass.async_create_task(hass.config_entries.async_remove(other.entry_id))
     entry.runtime_data = coordinator = MavoCoordinator(hass, entry)
     await coordinator.async_start()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -35,4 +41,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: MavoConfigEntry) -> bool
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: MavoConfigEntry) -> bool:
+    if entry.runtime_data is None:
+        return True
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

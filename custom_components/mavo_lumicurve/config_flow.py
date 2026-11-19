@@ -46,8 +46,16 @@ class MavoConfigFlow(ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(self._info.address)
             return await self.async_step_confirm()
         if not found:
-            return self.async_abort(reason="no_devices_found")
+            return await self.async_step_no_scale()
         return self.async_show_form(step_id="user", data_schema=vol.Schema({vol.Required("address"): vol.In({a: f"{i.name} ({a})" for a, i in found.items()})}))
+
+    async def async_step_no_scale(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """No scale in range: offer an entry without a scale, so the card is installed and shows example data until one is added."""
+        if user_input is not None:
+            if any(not e.data.get("address") for e in self._async_current_entries()):
+                return self.async_abort(reason="already_configured")
+            return self.async_create_entry(title="Mavo Lumicurve (no scale yet)", data={})
+        return self.async_show_form(step_id="no_scale")
 
     @staticmethod
     @callback

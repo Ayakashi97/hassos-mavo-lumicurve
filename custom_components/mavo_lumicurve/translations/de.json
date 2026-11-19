@@ -9,6 +9,10 @@
           "address": "Waage"
         }
       },
+      "no_scale": {
+        "title": "Keine Waage gefunden",
+        "description": "Keine Waage in Reichweite eines Bluetooth-Adapters oder Proxys. Die Karte kann trotzdem schon installiert werden: sie zeigt Beispieldaten, bis eine Waage hinzugefügt wird (Waage aufwecken, sie wird dann erkannt und ersetzt diesen Eintrag)."
+      },
       "confirm": {
         "description": "{name} einrichten? Home Assistant liest das Bezugs-Log per Bluetooth aus."
       }
