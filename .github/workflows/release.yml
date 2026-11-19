@@ -1,0 +1,34 @@
+name: Release
+# Pushing a tag vX.Y.Z publishes a GitHub release with the notes from CHANGELOG.md and the card file attached.
+# For a tag that already exists: Actions -> Release -> Run workflow -> enter the tag.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release, e.g. v0.8.2"
+        required: true
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: python3 tests/test_parse.py && node --check dist/mavo-lumicurve-card.js
+      - name: Release notes from CHANGELOG.md
+        run: |
+          v="${TAG#v}"
+          awk -v v="$v" 'index($0, "## [" v "]") == 1 {p=1; next} /^## \[/ && p {exit} p' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "CHANGELOG.md has no section for $v"; exit 1; }
+      - name: Create the release
+        run: gh release create "$TAG" dist/mavo-lumicurve-card.js --title "$TAG" --notes-file notes.md --verify-tag
