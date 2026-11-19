@@ -38,7 +38,7 @@ button:focus-visible,.row:focus-visible{outline:2px solid var(--a);outline-offse
 .ring{position:relative;width:104px;height:104px}.ring svg{width:104px;height:104px;transform:rotate(-90deg)}
 .ring circle{fill:none;stroke-width:9;stroke-linecap:round}.ring .bg{stroke:rgba(255,255,255,.1)}.ring .fg{stroke:var(--a);transition:stroke-dashoffset .6s}
 .ring div{position:absolute;inset:0;display:grid;place-content:center;text-align:center;font-size:22px;font-weight:700}.ring small{display:block;font-size:11px;font-weight:400;color:var(--mut)}
-.chart{margin:4px 0 14px}.chart svg{width:100%;height:56px;display:block}
+.chart{margin:4px 0 14px}.chart svg{width:100%;height:auto;display:block}.chart text{fill:var(--mut);font-size:6.5px}.chart .vl{fill:rgba(244,239,230,.85)}.chart .vl.cur{fill:var(--a);font-weight:700}.chart rect.b{cursor:pointer}.chart rect.b.cur{stroke:#fff;stroke-width:1}
 .chart rect.b{fill:var(--a);opacity:.85}.chart rect.b.out{opacity:.3}.chart rect.band{fill:var(--a);opacity:.1}
 .row{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:10px;border-radius:14px;cursor:pointer}
 .row:hover{background:rgba(255,255,255,.07)}
@@ -127,10 +127,14 @@ class NofreeBrewCard extends HTMLElement {
     const fl = this._c.chart_metric === 'flow', val = b => fl ? this._flow(b) : b.time_s, mode = this._mode === 'pourover' ? 'pourover' : 'espresso', tt = this._tg(mode)[fl ? 'flow' : 'time'];
     const d = list.filter(b => b.mode === mode).slice(0, this._c.chart_count).reverse(); /* long pours would flatten the espresso bars */
     if (!d.length) return '';
-    const max = Math.max(fl ? 1 : 10, ...d.map(val), tt ? tt[1] : 0), w = 300 / d.length, y = v => 52 - 46 * v / max;
-    return `<div class="chart"><div class="lab" style="display:flex;justify-content:space-between;align-items:center">${fl ? 'Durchfluss' : 'Bezugszeit'} · letzte ${d.length}${mode === 'pourover' ? ' Filter' : ''}<span class="seg">${[['time', 'Zeit'], ['flow', 'Fluss']].map(([k, t]) => `<button data-c="${k}" class="${(fl ? 'flow' : 'time') === k ? 'on' : ''}" style="min-height:32px;padding:0 10px">${t}</button>`).join('')}</span></div><svg viewBox="0 0 300 56" role="img" aria-label="${fl ? 'Durchfluss' : 'Bezugszeit'} der letzten ${d.length} Brühungen">
-      ${tt ? `<rect class="band" x="0" y="${y(tt[1])}" width="300" height="${y(tt[0]) - y(tt[1])}" rx="3"/>` : ''}
-      ${d.map((b, i) => `<rect class="b ${this._st(val(b), tt) === 'out' ? 'out' : ''}" x="${i * w + 1}" y="${y(val(b))}" width="${Math.max(w - 2, 1)}" height="${52 - y(val(b))}" rx="2"/>`).join('')}</svg></div>`;
+    const vs = d.map(val).sort((p, q) => p - q), cap = Math.max(vs[Math.floor(0.9 * (vs.length - 1))] * 1.2, tt ? tt[1] * 1.2 : 0, fl ? 1 : 10); // an outlier must not flatten all other bars
+    const max = Math.min(Math.max(fl ? 1 : 10, vs[vs.length - 1], tt ? tt[1] : 0), cap), X0 = 22, w = (300 - X0) / d.length, y = v => 64 - 50 * Math.min(v, max) / max;
+    const fmt = v => fl ? v.toFixed(1) : String(v), step = Math.ceil((fmt(max).length * 4 + 1) / w); // label every n-th bar so numbers never overlap
+        return `<div class="chart"><div class="lab" style="display:flex;justify-content:space-between;align-items:center">${fl ? 'Durchfluss (g/s)' : 'Bezugszeit (s)'} · letzte ${d.length}${mode === 'pourover' ? ' Filter' : ''}<span class="seg">${[['time', 'Zeit'], ['flow', 'Fluss']].map(([k, t]) => `<button data-c="${k}" class="${(fl ? 'flow' : 'time') === k ? 'on' : ''}" style="min-height:32px;padding:0 10px">${t}</button>`).join('')}</span></div><svg viewBox="0 0 300 72" role="img" aria-label="${fl ? 'Durchfluss' : 'Bezugszeit'} der letzten ${d.length} Brühungen; Balken antippen zum Auswählen">
+      ${tt ? `<rect class="band" x="${X0}" y="${y(tt[1])}" width="${300 - X0}" height="${y(tt[0]) - y(tt[1])}" rx="3"/>` : ''}
+      <text class="ya" x="${X0 - 3}" y="${y(max) + 3}" text-anchor="end">${fmt(max)}</text><text class="ya" x="${X0 - 3}" y="67" text-anchor="end">0</text><line class="ax" x1="${X0}" x2="300" y1="64.5" y2="64.5"/>
+      ${d.map((b, i) => `<rect class="b ${this._st(val(b), tt) === 'out' ? 'out' : ''} ${b.id === this._selId ? 'cur' : ''}" data-pick="${esc(b.id)}" x="${X0 + i * w + 1}" y="${y(val(b))}" width="${Math.max(w - 2, 1)}" height="${64 - y(val(b))}" rx="2"><title>${esc(disp(b).full)}: ${fmt(val(b))}</title></rect>
+        ${(d.length - 1 - i) % step === 0 ? `<text class="vl ${b.id === this._selId ? 'cur' : ''}" x="${X0 + i * w + w / 2}" y="${y(val(b)) - 2}" text-anchor="middle">${fmt(val(b))}</text>` : ''}`).join('')}</svg></div>`;
   }
   _nice(v) { return [20, 40, 70, 100, 140, 200, 300, 400, 600].find(s => s >= v) || Math.ceil(v / 100) * 100; }
   _peak(b) { // peak flow between samples that are >= 3 s apart (same idea as the scale's number, to be confirmed)
