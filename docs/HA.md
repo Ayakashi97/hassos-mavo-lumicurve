@@ -39,3 +39,21 @@ Rules that keep the history clean:
 One public GitHub repo with `custom_components/mavo_lumicurve/` (integration + bundled card) and `hacs.json`; users add it as a custom repository in the HA
 Marketplace/HACS, install, restart, and the scale is discovered. Needs: README with screenshots, licence, release tags, translations (de/en).
 Publishing is outward-facing, so it waits for an explicit go.
+
+## Settings in Home Assistant: one place per kind of setting
+Today the settings are spread over three places (card YAML, `settings.json`, `data/lumicurve.json`). In Home Assistant they become two, with a clear rule:
+**the integration decides what the data means, the card only decides how it looks.**
+
+| Kind | Where in HA | Examples |
+|---|---|---|
+| **Scale and data** | integration: Settings → Devices & services → Mavo Lumicurve (config flow + **Configure**) | which scale (found by auto-discovery, no file), targets for espresso and filter (time, weight, flow, ratio), what counts as a filter brew (min. seconds), noise limits, dose range, flow definition (average or peak), how many days of curves to keep, nightly export on/off |
+| **Look of one card** | the card (visual editor or YAML) | colours, language, texts, which parts are shown, chart bars, corner radius |
+| **Look of all cards** | HA theme variables `--nbc-*` | accent and tile colours |
+| **Ratings, bean, notes** | stored with the brew in the integration store (shared by all users) | stars, bean, text |
+
+How the card gets the integration's settings: the sensor/websocket data carries them next to the brews (`targets`, `flow_value`, labels of the types).
+A card option, if set, overrides the integration value for that one card. So you set your targets once, every card and dashboard follows.
+
+Rules that keep it simple:
+- Changing a rule (for example the filter threshold) re-evaluates **stored** brews: the store keeps raw seconds and grams, and the type, noise flag and ratio are computed when read.
+- No setting is needed to pair the scale: discovery and the config flow do that. `data/lumicurve.json` and `settings.json` stay only for the standalone Mac tools.
