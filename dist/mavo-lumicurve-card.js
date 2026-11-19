@@ -1,4 +1,4 @@
-/* mavo-lumicurve-card · v0.8 · Mavo Lumicurve brew logbook
+/* mavo-lumicurve-card · v0.8.1 · Mavo Lumicurve brew logbook
    Everything is configurable: see docs/CONFIG.md (options, colours, CSS variables, labels, where each thing lives).
    Source of the brews: `entity` (attribute `brews`), `brews_url` (JSON file) or `brews` (inline list).
    Notes/stars live in HA user data (frontend/set_user_data), localStorage as fallback. */
@@ -121,7 +121,7 @@ class MavoLumicurveCard extends HTMLElement {
     r.addEventListener('change', e => { const f = e.target.dataset.f; if (f && this._selId) { (this._notes[this._selId] ||= {})[f] = e.target.value; this._save(); this._draw(); } });
   }
   set hass(h) { this._h = h; if (this._c?.entity) { const b = h.states[this._c.entity]?.attributes?.brews; if (b !== this._src) { this._src = b; this._brews = b || []; this._draw(); } } }
-  async _fetch() { if (!this._c.brews_url) return; try { this._brews = await (await fetch(this._c.brews_url)).json(); } catch { this._brews = []; } this._draw(); }
+  async _fetch() { if (!this._c.brews_url) return; try { this._brews = await (await fetch(this._c.brews_url, { cache: 'no-store' })).json(); } catch { this._brews = []; } this._draw(); }
   _load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } }
   async _save() {
     try { localStorage.setItem(KEY, JSON.stringify(this._notes)); } catch {}

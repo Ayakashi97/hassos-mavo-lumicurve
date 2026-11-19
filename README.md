@@ -6,6 +6,18 @@ Everything is customizable (colours, texts, parts, targets, theme variables, vis
 
 Status: early and private. Tested on one scale (firmware 008.06) and Home Assistant 2026.11.
 
+## Run it in Home Assistant
+
+The card works in Home Assistant today. The scale is read by your Mac, and Home Assistant shows the result. A Home Assistant integration that syncs by itself is planned.
+
+1. Copy `dist/mavo-lumicurve-card.js` to `/config/www/mavo-lumicurve/` and add it under Settings → Dashboards → ⋮ → Resources
+   (`/local/mavo-lumicurve/mavo-lumicurve-card.js?v=0.8.0`, type JavaScript module).
+2. On your Mac run `./run.sh`, then copy `data/brews_ha.json` to `/config/www/mavo-lumicurve/brews.json`.
+3. Add the card "Brew logbook (Mavo Lumicurve)" with `brews_url: /local/mavo-lumicurve/brews.json`.
+
+Full step-by-step guide, what you should see, troubleshooting and the Bluetooth requirements for the integration: **[docs/INSTALL-HA.md](docs/INSTALL-HA.md)**.
+All card options, colours and theme variables: **[docs/CONFIG.md](docs/CONFIG.md)**.
+
 ## The card
 
 - Four tiles (ratio, flow, weight, time) in the scale's colours, targets per espresso and filter (green inside, orange outside).
@@ -14,10 +26,8 @@ Status: early and private. Tested on one scale (firmware 008.06) and Home Assist
 - History chart for time or flow, with the numbers on the bars; tap a bar to select it.
 - German and English; works on phones and light themes.
 
-### Install (manual)
-1. Copy `dist/mavo-lumicurve-card.js` to `/config/www/community/mavo-lumicurve-card/` (or any folder under `/config/www`).
-2. Settings → Dashboards → ⋮ → Resources → Add: URL `/local/community/mavo-lumicurve-card/mavo-lumicurve-card.js`, type JavaScript module.
-3. Add the card "Brew logbook (Mavo Lumicurve)" to a dashboard.
+### Install
+See "Run it in Home Assistant" above and [docs/INSTALL-HA.md](docs/INSTALL-HA.md).
 
 HACS: the repository is ready for HACS (category "Dashboard", file `dist/mavo-lumicurve-card.js`). HACS needs access to the repository, so adding it as a custom
 repository will most likely only work once it is public.
@@ -63,7 +73,7 @@ macOS needs Bluetooth permission for the terminal; only one program can be conne
 | `card/test.html` | local test page with presets |
 | `tools/`, `run.sh`, `settings.json.example` | scale discovery, sync, parser |
 | `tests/` | parser tests with a real log excerpt |
-| `docs/` | `CONFIG.md` (all settings), `HA.md` (Home Assistant and long-term storage), `DESIGN.md`, `PLAN.md` |
+| `docs/` | `INSTALL-HA.md` (run it in Home Assistant), `CONFIG.md` (all settings), `HA.md` (Home Assistant and long-term storage), `DESIGN.md`, `PLAN.md` |
 | `data/` | your logs and brews (not in git) |
 
 No licence is set yet; decide before making the repository public.

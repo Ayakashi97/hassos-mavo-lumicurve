@@ -7,6 +7,7 @@ cd "$(dirname "$0")"
 .venv/bin/python tools/sync.py
 LOG=$(ls -t data/scale_log_*.txt | head -1)
 .venv/bin/python tools/parse.py "$LOG" data/brews.json
+.venv/bin/python tools/export.py   # small file for Home Assistant (data/brews_ha.json)
 echo "open http://127.0.0.1:8766/card/test.html  (Ctrl+C stops the server)"
 (sleep 1; open http://127.0.0.1:8766/card/test.html) &
 python3 -m http.server 8766 --bind 127.0.0.1 >/dev/null

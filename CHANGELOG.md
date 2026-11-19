@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.1
+- The card loads the brews file without HTTP cache. New `tools/export.py`; `run.sh` writes `data/brews_ha.json`. New guide `docs/INSTALL-HA.md`.
+
 ## 0.8.0 (breaking: renamed)
 - The card is now **`custom:mavo-lumicurve-card`** (was `custom:nofree-brew-card`); file `dist/mavo-lumicurve-card.js`; editor element `mavo-lumicurve-card-editor`.
 - Theme variables are `--mlc-*` (were `--nbc-*`). Ratings and notes are stored under the key `mavo_lumicurve_notes`, so notes entered during tests under the old key are not carried over.
