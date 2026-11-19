@@ -27,7 +27,7 @@ From Home Assistant 2026.11 on, the **Marketplace** is built in (Settings → Ma
 4. Continue with "Give the card its brews" below.
 
 You need once: a GitHub account connected in the Marketplace (required for custom repositories) and the Marketplace notice accepted. Updates appear in the Marketplace like for any other card.
-The steps follow the Marketplace documentation; the My Home Assistant button is the HACS-style link and was not verified on 2026.11. This route has not been tried end to end here yet.
+Tested on Home Assistant 2026.11: adding the repository as a custom source and downloading it worked, the Marketplace registered the dashboard resource by itself (`/local/community/hassos-mavo-lumicurve/mavo-lumicurve-card.js`) and created an update entity. Until a GitHub release exists, the Marketplace installs and tracks the latest commit instead of a version number. The My Home Assistant button is the HACS-style link and was not verified on 2026.11.
 
 ### Option B: install by hand
 

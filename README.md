@@ -76,4 +76,4 @@ macOS needs Bluetooth permission for the terminal; only one program can be conne
 | `docs/` | `INSTALL-HA.md` (run it in Home Assistant), `CONFIG.md` (all settings), `ROADMAP.md` (integration plan, storage, open experiments) |
 | `data/` | your logs and brews (not in git) |
 
-No licence is set yet; decide before making the repository public.
+No licence is set yet.

@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased
-- Install guide: Marketplace (HACS) route with a My Home Assistant button next to the manual route.
+- Install guide: Marketplace route (tested on Home Assistant 2026.11) with a My Home Assistant button next to the manual route.
 
 ## 0.8.2
 - Cleanup: removed unused tools (`scan.py`, `watch.py`) and outdated plans; docs are now `INSTALL-HA.md`, `CONFIG.md` and `ROADMAP.md`. No change to the card's behaviour.
