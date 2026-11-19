@@ -25,6 +25,7 @@ class BrewSensor(MavoEntity, SensorEntity):
     def __init__(self, c, key, unit, dclass, field) -> None:
         super().__init__(c, key)
         self._field, self._attr_native_unit_of_measurement, self._attr_device_class = field, unit, dclass
+        self._attr_state_class = SensorStateClass.MEASUREMENT  # Home Assistant then keeps hourly long-term statistics of it
 
     @property
     def native_value(self):

@@ -70,3 +70,26 @@ Open: repository description and topics (for the HACS check), a licence, screens
 ## Card ideas for later
 
 Month view, per-bean averages, CSV export, swipe between brews, units (g/oz).
+
+
+## Next steps and long-term statistics
+
+**Does Home Assistant keep long-term data by itself?** Partly.
+
+| Data | Where it lives | Kept |
+|---|---|---|
+| All brews, curves, ratings, notes | the integration's storage (`.storage/mavo_lumicurve.<entry>`), included in backups | forever (espresso curves for the newest N brews, see `keep_curves`) |
+| Sensor states (last yield, time, flow, ratio) | recorder database | 10 days by default |
+| Hourly mean/min/max of those sensors | long-term statistics, created automatically for sensors with a `state_class` (set since 0.9.0) | forever |
+| Brew count | long-term statistics (`total_increasing`) | forever |
+
+So the logbook never depends on the recorder. The automatic statistics only describe "the last brew" per hour and are timed by the sync, not by the brew, so they are a rough trend, not a record.
+Exact per-brew statistics would need `async_add_external_statistics` with the brews' real times. Statistics are hourly buckets, so several brews in one hour must be combined, and brews without a real time cannot be placed. Worth it only if you want Statistics-graph cards or the Energy-style compare views for coffee; the card's own history chart already covers the logbook.
+
+Planned, in order:
+1. **First live run** with the Bluetooth adapter (UB500, 2026-11-20): discovery, first sync, reconnect behaviour, the sync interval. Fix what the real system shows.
+2. **Diagnostics** download (counts, last error, settings, no personal data) and a **Repair** when no Bluetooth adapter exists.
+3. **Event entity** per new brew, so automations can react ("brew finished").
+4. **Export** of the brews as CSV/JSON from the card or a service.
+5. Optional: external statistics (above), scale record download `02 01 03`, setting the scale clock so new brews always get real times.
+6. Before 1.0: licence, brand icon, Home Assistant integration quality checks (`hassfest`, type hints), tests with `pytest-homeassistant-custom-component`.
