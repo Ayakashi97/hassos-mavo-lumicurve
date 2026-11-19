@@ -31,10 +31,16 @@ to an HA webhook or writes `/config/www/mavo_brews.json`.
 Average flow = yield ÷ time (g/s, ≈ ml/s) is in `brews.json` (`flow_gs`) and the card (hero chip, rows, chart toggle, `target_flow`).
 A real flow *curve* might be possible later: the log has `[SW] restart=` / `lock=` samples during a shot, but they are sparse and not yet decoded.
 
-## What the log's clock tells us (analysed 2026-11-19)
-- The log is a full ring buffer (499,907 bytes both times we read it). File order is: 2022-03-01 … 2022-03-20, then 2022-02-02 … 2022-02-22.
-  The write pointer sits at the Mar/Feb seam, so the **newest entry is 2022-03-20 21:43** and the oldest 2022-02-02.
-- Wake/sleep gaps are continuous (median 105 min), so the scale has a running clock, but it was never set to real time and it shows 2022.
-- Roughly 2-6 identical shots a day (about 37 g in 19-21 s) look like factory/QC test routines. None of the 2026 use is visible yet.
-  Test: brew now, sync again, and look for entries *after* 2022-03-20 21:43 (the buffer is full, so new lines overwrite the oldest).
+## What the log's clock tells us (corrected 2026-11-19)
+Earlier notes here said the entries were from 2022 / factory tests. **That was wrong.**
+- The log file is chronological: it starts with a cut-off line (oldest data in the ring buffer) and ends with the
+  Bluetooth connection of the sync itself (`[BLE] Connected Master`, `mtu len = 244`). The last line is "now".
+- The scale has no real clock. After every cold boot (`[SYS] Build Jul 2 2026 … reboot reason = 0`) it restarts at
+  **2022-02-02 02:30**, so every date reads 2022. The firmware build date (Jul 2026) shows the data is from 2026.
+- The log contains 3 runs (boots): run 0 (older, before the battery ran flat), run 1 (short), run 2 (current, 20 days).
+- For run 2 the real time follows from the final line: real = sync time - (last scale clock - brew scale clock).
+  `parse.py` writes this as `real_ts` (checked: espresso in the morning, filter at midday, which matches usage).
+  Runs 0/1 have `real_ts: null` (unknown gap between boots) and show as "früher" in the card.
+- Re-sync often: the buffer is full (~500 KB, about 3-4 weeks), new lines overwrite the oldest.
+- Next: set the scale clock with the documented command so future runs carry real time (not sent yet).
 - Curves: pour-overs have 12-20 weight samples (real flow curve), espresso shots only 1-5 near the end.

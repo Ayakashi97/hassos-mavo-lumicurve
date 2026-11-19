@@ -15,6 +15,7 @@ const when = ts => { // "2022-03-18 04:40:28" -> parts (the scale's own clock); 
   const m = /^(\d{4})-(\d\d)-(\d\d) (\d\d:\d\d)(:\d\d)?/.exec(ts); const hm = (ts.split(' ')[1] || '').slice(0, 5);
   return m ? { short: `${m[3]}.${m[2]}.`, date: `${m[3]}.${m[2]}.${m[1]}`, time: m[4], full: `${m[3]}.${m[2]}.${m[1]} ${m[4]}`, year: +m[1] } : { short: '?', date: 'Datum unbekannt', time: hm, full: 'Datum unbekannt ' + hm, year: 0 };
 };
+const disp = b => b.real_ts ? when(b.real_ts) : { short: 'früher', date: 'Frühere Sitzung', time: '', full: 'frühere Sitzung (Datum unbekannt)', year: 0 };
 const CSS = a => `
 :host{--a:${a};--mut:rgba(244,239,230,.62);display:block;color:var(--primary-text-color,#f4efe6);font:14px/1.35 system-ui,-apple-system,sans-serif}
 *{box-sizing:border-box}
@@ -91,9 +92,8 @@ class NofreeBrewCard extends HTMLElement {
   _list() { // newest first; ts is the scale's clock, only good for ordering
     return (this._brews || []).map((b, i) => ({ ...b, id: b.ts + '|' + b.time_s + '|' + b.yield_g, i }))
       .filter(b => (this._c.show_invalid || b.valid !== false) && (this._mode === 'all' || b.mode === this._mode))
-      .sort((a, b) => { const x = a.ts[0] === '?' ? '' : a.ts, y = b.ts[0] === '?' ? '' : b.ts; return x < y ? 1 : x > y ? -1 : b.i - a.i; }); // unknown date = oldest
+      .sort((a, b) => (b.seq ?? b.i) - (a.seq ?? a.i)); // file order of the scale log = chronological
   }
-  _stale(b) { const y = when(b.ts).year; return y && Math.abs(new Date().getFullYear() - y) > 0; } // the scale's clock is usually unset
   _flow(b) { return b.flow_gs ?? (b.time_s ? b.yield_g / b.time_s : 0); }
   _in(v, r) { return !r || (v >= r[0] && v <= r[1]); }
   _ok(b) { const k = this._c; return (k.target_time || k.target_yield || k.target_flow) && this._in(b.time_s, k.target_time) && this._in(b.yield_g, k.target_yield) && this._in(this._flow(b), k.target_flow); }
@@ -122,17 +122,17 @@ class NofreeBrewCard extends HTMLElement {
   }
   _hero(b) {
     const C = 2 * Math.PI * 41, p = Math.min(1, b.time_s / this._c.ring_max);
-    return `<div class="hero"><div><div class="lab">Letzter Bezug · ${when(b.ts).full}</div><div class="big">${b.yield_g.toFixed(1)}<small>g</small></div>
-      <div class="sub"><span class="chip">${this._flow(b).toFixed(1)} g/s</span>${b.ratio ? `<span class="chip">1 : ${b.ratio.toFixed(1)}</span>` : ''}${b.dose_g ? `<span class="chip">${b.dose_g.toFixed(1)} g Mehl</span>` : ''}${this._stale(b) ? `<span class="chip warn" title="Datum und Uhrzeit stammen aus der internen Uhr der Waage. Sie wurde nie gestellt und zeigt deshalb 2022.">Uhr nicht gestellt (${when(b.ts).year})</span>` : ''}${this._ok(b) ? `<span class="chip ok">${ic('check')} im Ziel</span>` : ''}</div></div>
+    return `<div class="hero"><div><div class="lab">Letzter Bezug · ${disp(b).full}</div><div class="big">${b.yield_g.toFixed(1)}<small>g</small></div>
+      <div class="sub"><span class="chip">${this._flow(b).toFixed(1)} g/s</span>${b.ratio ? `<span class="chip">1 : ${b.ratio.toFixed(1)}</span>` : ''}${b.dose_g ? `<span class="chip">${b.dose_g.toFixed(1)} g Mehl</span>` : ''}${this._ok(b) ? `<span class="chip ok">${ic('check')} im Ziel</span>` : ''}</div></div>
       <div class="ring" role="img" aria-label="${b.time_s} Sekunden"><svg viewBox="0 0 104 104"><circle class="bg" cx="52" cy="52" r="41"/><circle class="fg" cx="52" cy="52" r="41" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - p)}"/></svg><div>${b.time_s}<small>Sekunden</small></div></div></div>${this._curve(b)}`;
   }
   _row(b) {
     const no = this._notes[b.id] || {}, ok = this._ok(b), tmax = this._c.ring_max;
-    let h = `<div class="row" tabindex="0" role="button" aria-expanded="${this._open === b.id}" data-id="${esc(b.id)}"><div class="t ${ok ? 'ok' : ''}"><span>${when(b.ts).short}<br>${when(b.ts).time}</span></div>
+    let h = `<div class="row" tabindex="0" role="button" aria-expanded="${this._open === b.id}" data-id="${esc(b.id)}"><div class="t ${ok ? 'ok' : ''}"><span>${disp(b).short}<br>${disp(b).time}</span></div>
       <div style="min-width:0"><b>${b.yield_g.toFixed(1)} g</b> in ${b.time_s} s · ${this._flow(b).toFixed(1)} g/s<small>${esc(no.bean || (b.mode === 'pourover' ? 'Filter' : 'Espresso'))}${no.note ? ' · ' + esc(no.note) : ''}</small>
       <div class="bar"><i style="width:${Math.min(100, 100 * b.time_s / (b.mode === 'pourover' ? 240 : tmax))}%"></i></div></div>
       <div class="r">${b.ratio ? '1:' + b.ratio.toFixed(1) : ''}<div class="stars">${'★'.repeat(no.stars || 0)}</div></div></div>`;
-    if (this._open === b.id) h += `<div class="edit"><div class="note" style="font-size:11px;color:var(--mut)">${when(b.ts).date} ${esc(b.ts.split(' ')[1])} · Uhr der Waage</div>${this._curve(b)}<input data-f="bean" placeholder="Bohne" aria-label="Bohne" value="${esc(no.bean)}">
+    if (this._open === b.id) h += `<div class="edit"><div class="note" style="font-size:11px;color:var(--mut)">${esc(disp(b).full)}${b.real_ts ? ':' + esc(b.real_ts.slice(17)) : ''}</div>${this._curve(b)}<input data-f="bean" placeholder="Bohne" aria-label="Bohne" value="${esc(no.bean)}">
       <textarea data-f="note" rows="2" placeholder="Notiz" aria-label="Notiz">${esc(no.note)}</textarea>
       <div class="st">${[1, 2, 3, 4, 5].map(s => `<button data-s="${s}" class="${(no.stars || 0) >= s ? 'on' : ''}" aria-label="${s} Sterne">${ic('star')}</button>`).join('')}</div></div>`;
     return h;
@@ -141,7 +141,7 @@ class NofreeBrewCard extends HTMLElement {
     const r = this.shadowRoot; if (!r) return;
     const l = this._list(), n = this._c.recent, recent = l.slice(0, n), older = l.slice(n);
     let day = '', old = '';
-    for (const b of older) { const d = b.ts.slice(0, 10); if (d !== day) { day = d; old += `<div class="day">${esc(d)}</div>`; } old += this._row(b); }
+    for (const b of older) { const d = disp(b).date; if (d !== day) { day = d; old += `<div class="day">${esc(d)}</div>`; } old += this._row(b); }
     r.innerHTML = `<style>${CSS(this._c.accent || '#e8b54a')}</style><div class="card">
       <header><div class="logo">${ic('cup')}</div><h2>${esc(this._c.title || 'Espresso-Logbuch')}<small>${l.length} Brühungen</small></h2>
         <div class="seg">${[['all', 'Alle'], ['espresso', 'Espresso'], ['pourover', 'Filter']].map(([k, t]) => `<button data-m="${k}" class="${this._mode === k ? 'on' : ''}">${t}</button>`).join('')}</div></header>

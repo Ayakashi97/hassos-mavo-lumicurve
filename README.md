@@ -10,8 +10,9 @@ Home Assistant card with a logbook. Work in progress, tested only on one scale (
   write `01 01 01` to `fff2` → it announces the size (`01 09 01` + 8 bytes) → write `01 09 02` + the same 8 bytes →
   log text arrives as notifications on `fff2` (2-byte sequence + ASCII), end `01 xx 03`.
   Protocol notes come from [Beanconqueror#1198](https://github.com/graphefruit/Beanconqueror/issues/1198).
-- Reading the log did **not** clear it on our scale (same size twice). Not guaranteed on other firmware: `sync.py` saves the raw text first.
-- The scale clock is not set (dates read 2022), so timestamps only give an order.
+- Reading the log did **not** clear it on our scale (it is a full ring buffer, ~500 KB, oldest lines get overwritten). `sync.py` saves the raw text first.
+- The scale has no real clock: after every cold boot it restarts at 2022-02-02 02:30. The last log line is the sync's own
+  BLE connection, so `parse.py` can compute real times (`real_ts`) for the current run; older runs show as "früher".
 - Shots carry a `curve` (weight over time) when the log has enough samples: pour-overs yes, espresso mostly no.
 - A brew ends at `[MP] weight num N time T`; its yield is the last settled `[SW] lock=A-B-C` before it (B in 0.1 g).
 
