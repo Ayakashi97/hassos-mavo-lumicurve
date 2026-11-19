@@ -30,7 +30,7 @@ All card options, colours and theme variables: **[docs/CONFIG.md](docs/CONFIG.md
 ### Install
 See "Run it in Home Assistant" above and [docs/INSTALL-HA.md](docs/INSTALL-HA.md).
 
-Marketplace/HACS: the repository has the HACS layout (category "Dashboard", file `dist/mavo-lumicurve-card.js`); adding it as a custom repository is documented but not yet tested end to end.
+Marketplace: the repository has the layout the Marketplace expects (`hacs.json`, category "Dashboard", file `dist/mavo-lumicurve-card.js`). Home Assistant 2026.11 and newer has the Marketplace built in; older versions use the HACS integration the same way.
 
 ### Minimal configuration
 ```yaml

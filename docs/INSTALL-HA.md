@@ -16,7 +16,7 @@ So today the scale is read **by your Mac**, and Home Assistant only shows the re
 
 ### Option A: Marketplace (recommended)
 
-Home Assistant 2026.11 and newer has the Marketplace built in (Settings → Marketplace); older versions use the HACS integration, where "Custom repositories" works the same way.
+From Home Assistant 2026.11 on, the **Marketplace** is built in (Settings → Marketplace) and replaces HACS. Older versions need the HACS integration, where "Custom repositories" works the same way.
 
 [![Open your Home Assistant instance and open this repository in the store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Ayakashi97&repository=hassos-mavo-lumicurve&category=plugin)
 
