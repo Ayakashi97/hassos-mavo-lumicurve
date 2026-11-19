@@ -29,7 +29,7 @@ Home Assistant 2026.11 and newer has the Marketplace built in (Settings → Mark
 You need once: a GitHub account connected in the Marketplace (required for custom repositories) and the Marketplace notice accepted. Updates appear in the Marketplace like for any other card.
 The steps follow the Marketplace documentation; the My Home Assistant button is the HACS-style link and was not verified on 2026.11. This route has not been tried end to end here yet.
 
-### Option B: by hand
+### Option B: install by hand
 
 1. Get `dist/mavo-lumicurve-card.js` from this repository (folder `dist`, button "Download raw file") and copy it to `/config/www/mavo-lumicurve/` of Home Assistant
    (create the folders). Ways: the **Studio Code Server** app (drag and drop), the **Samba** share, or the **Terminal & SSH** app.
@@ -42,16 +42,16 @@ When you update the file later, change `?v=0.8.2` to the new version number. Hom
 
 ## Give the card its brews
 
-**Option A: a file (recommended)**
+**Data option 1: a file (recommended)**
 
 1. On your Mac, in the repository: `./run.sh` (wake the scale first). It syncs the scale, parses the log, and writes `data/brews_ha.json`.
    (Or just `python3 tools/export.py` if you already have `data/brews.json`.)
-2. Copy `data/brews_ha.json` to `/config/www/mavo-lumicurve/brews.json` in Home Assistant (same ways as in Option B).
+2. Copy `data/brews_ha.json` to `/config/www/mavo-lumicurve/brews.json` in Home Assistant (same ways as in "Install by hand").
 3. Use `brews_url: /local/mavo-lumicurve/brews.json` in the card.
 4. Repeat 1 and 2 whenever you want fresh brews. The card always loads the newest file, no cache clearing needed.
    The scale keeps only about 3 to 4 weeks in its log, so sync at least that often.
 
-**Option B: data inside the card (static, for trying it out)**
+**Data option 2: data inside the card (static, for trying it out)**
 
 Paste the list into the card config as `brews:`. It never updates. The test dashboard of this project works this way.
 
@@ -93,7 +93,7 @@ It needs Bluetooth in range of the scale:
 | Problem | Likely cause and fix |
 |---|---|
 | The card is not in the "Add card" list | The resource isn't loaded: Marketplace install not finished, or (by hand) the type must be JavaScript module and the URL exact. Then hard refresh. |
-| "Custom element doesn't exist: mavo-lumicurve-card" | Same: wrong resource URL, or the file isn't in `/config/www/mavo-lumicurve/`. Open the file URL from Option B to check. |
+| "Custom element doesn't exist: mavo-lumicurve-card" | Same: wrong resource URL, or the file isn't in `/config/www/mavo-lumicurve/`. Open the file URL from "Install by hand" to check. |
 | The card shows "Noch keine Brühungen" / "No brews yet" | The data file is missing or empty. Open `/local/mavo-lumicurve/brews.json` in the browser. Check `brews_url`. |
 | An old version still shows | Cached file: change `?v=` in the resource URL and hard refresh. |
 | Everything says "früher" | These brews come from before the scale's last cold boot, so their real time is unknown. New brews get real times after the next sync. |
