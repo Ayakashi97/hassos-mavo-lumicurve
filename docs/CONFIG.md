@@ -15,7 +15,7 @@ the **parsing rules** in `settings.json`. Details below.
 | Raw logs and parsed brews | `data/scale_log_<time>.txt`, `data/brews.json` | `run.sh` or `tools/sync.py` + `tools/parse.py`; `data/` is not in git |
 | Rules of the parser (what is a filter brew, what is noise, dose range, anchor delay) | `settings.json` in the repo root (optional) | copy `settings.json.example`, change values; defaults are at the top of `tools/parse.py` |
 | Test page presets | `card/test.html` (`presets`) | edit the JS object |
-| Card file in Home Assistant | dashboard resource `ab05e666d7ee435e9f9dbbe12f42709f` (inline) | `ha_config_set_dashboard_resource(resource_id=…, content=…)`; source is `card/nofree-brew-card.js` |
+| Card file in Home Assistant | dashboard resource `ab05e666d7ee435e9f9dbbe12f42709f` (inline) | `ha_config_set_dashboard_resource(resource_id=…, content=…)`; source is `dist/nofree-brew-card.js` |
 | Test dashboard | `kaffee-log` (admin only), card config inside the dashboard | Settings → Dashboards, or the editor |
 | Long-term data in HA (later) | integration store, see `docs/HA.md` | not built yet |
 

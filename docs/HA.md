@@ -2,7 +2,7 @@
 
 ## Test deployment (2026-11-19, HA 2026.11.1)
 - Card hosted as an **inline dashboard resource** (module, 23,036 bytes, sha256 `06ce1fd0…23d8`, resource id `ab05e666d7ee435e9f9dbbe12f42709f`),
-  same way as the floorplan card. Update with `ha_config_set_dashboard_resource(resource_id=…, edits=[…])` or recreate from `card/nofree-brew-card.js`.
+  same way as the floorplan card. Update with `ha_config_set_dashboard_resource(resource_id=…, edits=[…])` or recreate from `dist/nofree-brew-card.js`.
 - New **admin-only dashboard** `kaffee-log` (sidebar "Kaffee", view `kaffee`) with one `custom:nofree-brew-card`.
   Data is **inlined in the card config** (111 brews, about 19 KB: `data/brews_ha.json`). That is only for the test; nothing updates it.
 - Brew notes and stars use `frontend/set_user_data`: they are stored per HA user, not shared.

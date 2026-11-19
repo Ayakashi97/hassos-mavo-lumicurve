@@ -1,39 +1,69 @@
-# mavo-lumicurve
+# Mavo Lumicurve brew card
 
-Read the brew log of a **Mavo Lumicurve** coffee scale (Lefu CK850 Bluetooth module) and show it as a
-Home Assistant card with a logbook. Work in progress, tested only on one scale (firmware 008.06).
+A Home Assistant dashboard card for the **Mavo Lumicurve** coffee scale (Lefu CK850 Bluetooth module): the last brew looks like the scale's own screen
+(ratio, flow, weight, time and a weight graph), you flip through older brews or pick one from a dropdown, rate them, and see a history chart with numbers.
+Everything is customizable (colours, texts, parts, targets, theme variables, visual editor).
 
-## What the scale does (found by experiment)
+Status: early and private. Tested on one scale (firmware 008.06) and Home Assistant 2026.11.
+
+## The card
+
+- Four tiles (ratio, flow, weight, time) in the scale's colours, targets per espresso and filter (green inside, orange outside).
+- Weight graph with axes, end marker and, for pour-overs, the real curve. Espresso curves are estimated (the scale logs too few samples).
+- Brew selector: arrows and a dropdown with every brew (the logbook), stars and notes per brew.
+- History chart for time or flow, with the numbers on the bars; tap a bar to select it.
+- German and English; works on phones and light themes.
+
+### Install (manual)
+1. Copy `dist/nofree-brew-card.js` to `/config/www/community/nofree-brew-card/` (or any folder under `/config/www`).
+2. Settings → Dashboards → ⋮ → Resources → Add: URL `/local/community/nofree-brew-card/nofree-brew-card.js`, type JavaScript module.
+3. Add the card "Brew logbook (Mavo Lumicurve)" to a dashboard.
+
+HACS: the repository is ready for HACS (category "Dashboard", file `dist/nofree-brew-card.js`). HACS needs access to the repository, so adding it as a custom
+repository will most likely only work once it is public.
+
+### Minimal configuration
+```yaml
+type: custom:nofree-brew-card
+entity: sensor.mavo_lumicurve_brews     # attribute "brews"; or brews_url / brews (inline list)
+targets:
+  espresso: { time: [22, 30], yield: [34, 42] }
+  pourover: { time: [150, 210], yield: [250, 310] }
+```
+All options, colours, theme variables, texts and where each setting lives: **[docs/CONFIG.md](docs/CONFIG.md)**.
+The card gets its data from an entity, a JSON file or an inline list; the integration that fills an entity automatically is planned (`docs/HA.md`).
+
+## The scale (what we found)
 
 - BLE, no pairing. Name `MAVO LUMICURVE`, service `fff0` (`fff1`/`fff2` write+notify, `fff3` indicate).
-- It does **not** stream live weight. It keeps an on-board debug log (~500 KB) that you can pull:
-  write `01 01 01` to `fff2` → it announces the size (`01 09 01` + 8 bytes) → write `01 09 02` + the same 8 bytes →
-  log text arrives as notifications on `fff2` (2-byte sequence + ASCII), end `01 xx 03`.
-  Protocol notes come from [Beanconqueror#1198](https://github.com/graphefruit/Beanconqueror/issues/1198).
-- Reading the log did **not** clear it on our scale (it is a full ring buffer, ~500 KB, oldest lines get overwritten). `sync.py` saves the raw text first.
-- The scale has no real clock: after every cold boot it restarts at 2022-02-02 02:30. The last log line is the sync's own
-  BLE connection, so `parse.py` can compute real times (`real_ts`) for the current run; older runs show as "früher".
-- Shots carry a `curve` (weight over time) when the log has enough samples: pour-overs yes, espresso mostly no.
-- A brew ends at `[MP] weight num N time T`; its yield is the last settled `[SW] lock=A-B-C` before it (B in 0.1 g).
+- It does **not** stream live weight. It keeps an on-board debug log (~500 KB ring buffer) you can pull: write `01 01 01` to `fff2`, it announces the size
+  (`01 09 01` + 8 bytes), acknowledge with `01 09 02` + the same 8 bytes, the log arrives as notifications on `fff2`.
+  Protocol notes: [Beanconqueror#1198](https://github.com/graphefruit/Beanconqueror/issues/1198). Reading does not clear the log.
+- The scale has no real clock: after every cold boot it restarts at 2022-02-02 02:30. The log ends with the sync's own BLE connection, so the parser computes
+  real times for the latest run (`real_ts`); older runs show as "earlier".
+- A brew ends at `[MP] weight num N time T`; its yield is the last settled `[SW] lock=A-B-C` before it (B = 0.1 g).
 
-## Use
+## Tools (Mac, Python)
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install bleak
-.venv/bin/python tools/discover.py      # wake the scale; lists Lefu/Mavo devices, remembers one in data/lumicurve.json
-.venv/bin/python tools/sync.py          # pulls the log into data/scale_log_<time>.txt
-.venv/bin/python tools/parse.py data/scale_log_*.txt data/brews.json
+./run.sh                                 # first run creates .venv and installs bleak; syncs, parses, opens the card test page
+.venv/bin/python tools/discover.py       # find the scale, remember it in data/lumicurve.json
+.venv/bin/python tools/sync.py           # pull the log into data/scale_log_<time>.txt
+.venv/bin/python tools/parse.py data/scale_log_<time>.txt data/brews.json
 python3 tests/test_parse.py
-python3 -m http.server 8766 --bind 127.0.0.1   # then open /card/test.html
 ```
+macOS needs Bluetooth permission for the terminal; only one program can be connected to the scale at a time. Parser rules can be changed in `settings.json`
+(copy `settings.json.example`). `tools/explorer.html` (Chrome, Web Bluetooth) lists services and logs raw bytes.
 
-On macOS the terminal app needs Bluetooth permission. Only one program can be connected to the scale at a time
-(close other apps/browser tabs first). `tools/explorer.html` (Chrome, Web Bluetooth) lists services and logs raw bytes;
-`tools/watch.py` prints advertisement changes (the broadcast carries no weight).
+## Repository layout
 
-## Configuration
+| Path | Content |
+|---|---|
+| `dist/nofree-brew-card.js` | the card (single file, no build step) |
+| `card/test.html` | local test page with presets |
+| `tools/`, `run.sh`, `settings.json.example` | scale discovery, sync, parser |
+| `tests/` | parser tests with a real log excerpt |
+| `docs/` | `CONFIG.md` (all settings), `HA.md` (Home Assistant and long-term storage), `DESIGN.md`, `PLAN.md` |
+| `data/` | your logs and brews (not in git) |
 
-The card is fully customizable (colours, texts, language, parts, targets, HA theme variables, a visual editor). **Everything is listed in [docs/CONFIG.md](docs/CONFIG.md)**,
-including where each setting lives (card config, theme variables, `data/lumicurve.json`, `settings.json`).
-
-See [docs/PLAN.md](docs/PLAN.md) for the road to Home Assistant.
+No licence is set yet; decide before making the repository public.
