@@ -5,6 +5,10 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Changed
+- The ratio tile shows the dose as "18 g Kaffee" ("18 g coffee") instead of "18.0 g Mehl".
+- The note "Kurve geschätzt" ("curve estimated") sits centred above the graph instead of next to the `(s)` axis label.
+
 ## [0.9.1] - 2026-11-19
 
 ### Fixed
