@@ -123,7 +123,7 @@ class NofreeBrewCard extends HTMLElement {
   _hero(b) {
     const C = 2 * Math.PI * 41, p = Math.min(1, b.time_s / this._c.ring_max);
     return `<div class="hero"><div><div class="lab">Letzter Bezug · ${when(b.ts).full}</div><div class="big">${b.yield_g.toFixed(1)}<small>g</small></div>
-      <div class="sub"><span class="chip">${this._flow(b).toFixed(1)} g/s</span>${b.ratio ? `<span class="chip">1 : ${b.ratio.toFixed(1)}</span>` : ''}${b.dose_g ? `<span class="chip">${b.dose_g.toFixed(1)} g Mehl</span>` : ''}${this._stale(b) ? `<span class="chip warn" title="Die Uhr der Waage ist nicht gestellt; Datum und Zeit stammen von ihr.">Waagen-Uhr ${when(b.ts).year}</span>` : ''}${this._ok(b) ? `<span class="chip ok">${ic('check')} im Ziel</span>` : ''}</div></div>
+      <div class="sub"><span class="chip">${this._flow(b).toFixed(1)} g/s</span>${b.ratio ? `<span class="chip">1 : ${b.ratio.toFixed(1)}</span>` : ''}${b.dose_g ? `<span class="chip">${b.dose_g.toFixed(1)} g Mehl</span>` : ''}${this._stale(b) ? `<span class="chip warn" title="Datum und Uhrzeit stammen aus der internen Uhr der Waage. Sie wurde nie gestellt und zeigt deshalb 2022.">Uhr nicht gestellt (${when(b.ts).year})</span>` : ''}${this._ok(b) ? `<span class="chip ok">${ic('check')} im Ziel</span>` : ''}</div></div>
       <div class="ring" role="img" aria-label="${b.time_s} Sekunden"><svg viewBox="0 0 104 104"><circle class="bg" cx="52" cy="52" r="41"/><circle class="fg" cx="52" cy="52" r="41" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - p)}"/></svg><div>${b.time_s}<small>Sekunden</small></div></div></div>${this._curve(b)}`;
   }
   _row(b) {
