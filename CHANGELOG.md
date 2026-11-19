@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-11-19
+
 ### Changed
 - The ratio tile shows the dose as "18 g Kaffee" ("18 g coffee") instead of "18.0 g Mehl".
 - The note "Kurve geschätzt" ("curve estimated") sits centred above the graph instead of next to the `(s)` axis label.
@@ -96,7 +98,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.3...v0.9.0
 [0.8.3]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.2...v0.8.3
