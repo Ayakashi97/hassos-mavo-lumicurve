@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-19
+
 ### Added
 - **Home Assistant integration** `mavo_lumicurve`: finds the scale by Bluetooth discovery, syncs the brew log over Home Assistant's own Bluetooth adapter or ESPHome proxy whenever the scale wakes up, and stores the brews (survives log rotation and backups include it). Sensors (last yield, time, flow, ratio, brew count, battery, last sync), a Sync now button, and an options form for all rules and targets.
 - The card reads brews, ratings and default targets from the integration (no configuration needed) and updates after each sync. The integration serves the card file itself.
@@ -85,7 +87,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.3...v0.9.0
 [0.8.3]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.0...v0.8.1
