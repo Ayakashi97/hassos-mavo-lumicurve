@@ -1,0 +1,94 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Mavo Lumicurve",
+        "description": "Choose the scale (wake it first so it shows up).",
+        "data": {
+          "address": "Scale"
+        }
+      },
+      "confirm": {
+        "description": "Set up {name}? Home Assistant will sync its brew log over Bluetooth."
+      }
+    },
+    "abort": {
+      "no_devices_found": "No scale found. Wake it and make sure a Bluetooth adapter or proxy is in range.",
+      "already_configured": "Already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Brew settings",
+        "description": "Rules for the log and default targets for the card (a card can override them). Empty target fields = no target.",
+        "data": {
+          "pourover_min_s": "Filter from (seconds)",
+          "min_time_s": "Ignore brews shorter than (s)",
+          "min_yield_g": "Ignore brews lighter than (g)",
+          "dose_min_g": "Dose from",
+          "dose_max_g": "Dose to",
+          "flow_value": "Flow tile shows",
+          "min_sync_interval_min": "Minutes between syncs",
+          "keep_curves": "Keep espresso curves of newest N brews",
+          "espresso_time_min": "Espresso time min",
+          "espresso_time_max": "Espresso time max",
+          "espresso_yield_min": "Espresso yield min",
+          "espresso_yield_max": "Espresso yield max",
+          "espresso_flow_min": "Espresso Flow min",
+          "espresso_flow_max": "Espresso Flow max",
+          "espresso_ratio_min": "Espresso ratio min",
+          "espresso_ratio_max": "Espresso ratio max",
+          "pourover_time_min": "Filter time min",
+          "pourover_time_max": "Filter time max",
+          "pourover_yield_min": "Filter yield min",
+          "pourover_yield_max": "Filter yield max",
+          "pourover_flow_min": "Filter Flow min",
+          "pourover_flow_max": "Filter Flow max",
+          "pourover_ratio_min": "Filter ratio min",
+          "pourover_ratio_max": "Filter ratio max"
+        }
+      }
+    }
+  },
+  "selector": {
+    "flow_value": {
+      "options": {
+        "auto": "Auto",
+        "avg": "Average",
+        "peak": "Peak"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_yield": {
+        "name": "Last brew yield"
+      },
+      "last_time": {
+        "name": "Last brew time"
+      },
+      "last_flow": {
+        "name": "Last brew flow"
+      },
+      "last_ratio": {
+        "name": "Last brew ratio"
+      },
+      "brew_count": {
+        "name": "Brews"
+      },
+      "battery": {
+        "name": "Battery"
+      },
+      "last_sync": {
+        "name": "Last sync"
+      }
+    },
+    "button": {
+      "sync": {
+        "name": "Sync now"
+      }
+    }
+  }
+}

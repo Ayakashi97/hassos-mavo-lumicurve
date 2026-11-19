@@ -16,7 +16,8 @@ the **parsing rules** in `settings.json`. Details below.
 | Rules of the parser (what is a filter brew, what is noise, dose range, anchor delay) | `settings.json` in the repo root (optional) | copy `settings.json.example`, change values; defaults are at the top of `tools/parse.py` |
 | Test page presets | `card/test.html` (`presets`) | edit the JS object |
 | Card file in Home Assistant | a dashboard resource (see `INSTALL-HA.md`) | replace the file and change `?v=` in the resource URL |
-| Long-term data in HA (later) | integration store, see `ROADMAP.md` | not built yet |
+| Rules, default targets, flow tile, sync interval (integration) | Settings → Devices & services → Mavo Lumicurve → Configure | the card uses them as defaults; card options win |
+| Brews, ratings, notes (integration) | integration storage (`.storage/mavo_lumicurve.*`, included in backups) | stars/notes are saved from the card |
 
 ## 2. Card options
 

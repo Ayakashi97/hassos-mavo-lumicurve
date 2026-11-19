@@ -1,6 +1,6 @@
 # Releasing
 
-A release is a git tag `vX.Y.Z`. Pushing it makes GitHub publish a release whose notes are the matching section of `CHANGELOG.md` and whose attached file is `dist/mavo-lumicurve-card.js`.
+A release is a git tag `vX.Y.Z`. Pushing it makes GitHub publish a release whose notes are the matching section of `CHANGELOG.md` and whose attached file is `custom_components/mavo_lumicurve/www/mavo-lumicurve-card.js`.
 The Marketplace then shows a real version, release notes and update notices (without a release it tracks the newest commit).
 
 ## Versioning
@@ -33,4 +33,4 @@ A release for a tag that already exists (for example `v0.8.2`): GitHub → Actio
 
 ## Version places
 
-The script keeps these in sync: the header comment of `dist/mavo-lumicurve-card.js`, the `?v=` in the resource examples (`README.md`, `docs/INSTALL-HA.md`), and the headings and links in `CHANGELOG.md`. `hacs.json` has no version.
+The script keeps these in sync: the header comment of `custom_components/mavo_lumicurve/www/mavo-lumicurve-card.js`, the `?v=` in the resource examples (`README.md`, `docs/INSTALL-HA.md`), and the headings and links in `CHANGELOG.md`. `hacs.json` has no version.

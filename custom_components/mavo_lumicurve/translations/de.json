@@ -1,0 +1,94 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Mavo Lumicurve",
+        "description": "Waage wählen (vorher aufwecken, damit sie erscheint).",
+        "data": {
+          "address": "Waage"
+        }
+      },
+      "confirm": {
+        "description": "{name} einrichten? Home Assistant liest das Bezugs-Log per Bluetooth aus."
+      }
+    },
+    "abort": {
+      "no_devices_found": "Keine Waage gefunden. Aufwecken und prüfen, ob ein Bluetooth-Adapter oder Proxy in Reichweite ist.",
+      "already_configured": "Bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bezugs-Einstellungen",
+        "description": "Regeln für das Log und Standard-Ziele für die Karte (die Karte kann sie überschreiben). Leere Zielfelder = kein Ziel.",
+        "data": {
+          "pourover_min_s": "Filter ab (Sekunden)",
+          "min_time_s": "Bezüge ignorieren unter (s)",
+          "min_yield_g": "Bezüge ignorieren unter (g)",
+          "dose_min_g": "Dosis von",
+          "dose_max_g": "Dosis bis",
+          "flow_value": "Flow-Kachel zeigt",
+          "min_sync_interval_min": "Minuten zwischen Syncs",
+          "keep_curves": "Espresso-Kurven der letzten N Bezüge behalten",
+          "espresso_time_min": "Espresso Zeit min",
+          "espresso_time_max": "Espresso Zeit max",
+          "espresso_yield_min": "Espresso Menge min",
+          "espresso_yield_max": "Espresso Menge max",
+          "espresso_flow_min": "Espresso Flow min",
+          "espresso_flow_max": "Espresso Flow max",
+          "espresso_ratio_min": "Espresso Verhältnis min",
+          "espresso_ratio_max": "Espresso Verhältnis max",
+          "pourover_time_min": "Filter Zeit min",
+          "pourover_time_max": "Filter Zeit max",
+          "pourover_yield_min": "Filter Menge min",
+          "pourover_yield_max": "Filter Menge max",
+          "pourover_flow_min": "Filter Flow min",
+          "pourover_flow_max": "Filter Flow max",
+          "pourover_ratio_min": "Filter Verhältnis min",
+          "pourover_ratio_max": "Filter Verhältnis max"
+        }
+      }
+    }
+  },
+  "selector": {
+    "flow_value": {
+      "options": {
+        "auto": "Auto",
+        "avg": "Durchschnitt",
+        "peak": "Spitze"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_yield": {
+        "name": "Letzter Bezug Menge"
+      },
+      "last_time": {
+        "name": "Letzter Bezug Zeit"
+      },
+      "last_flow": {
+        "name": "Letzter Bezug Flow"
+      },
+      "last_ratio": {
+        "name": "Letzter Bezug Verhältnis"
+      },
+      "brew_count": {
+        "name": "Bezüge"
+      },
+      "battery": {
+        "name": "Batterie"
+      },
+      "last_sync": {
+        "name": "Letzter Sync"
+      }
+    },
+    "button": {
+      "sync": {
+        "name": "Jetzt synchronisieren"
+      }
+    }
+  }
+}

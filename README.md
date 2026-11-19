@@ -4,20 +4,21 @@ A Home Assistant dashboard card for the **Mavo Lumicurve** coffee scale (Lefu CK
 (ratio, flow, weight, time and a weight graph), you flip through older brews or pick one from a dropdown, rate them, and see a history chart with numbers.
 Everything is customizable (colours, texts, parts, targets, theme variables, visual editor).
 
-Status: early. Tested on one scale (firmware 008.06) and Home Assistant 2026.11.
+Status: early. Card tested on one scale (firmware 008.06) and Home Assistant 2026.11.
 
 ## Run it in Home Assistant
 
-The card works in Home Assistant today. The scale is read by your Mac, and Home Assistant shows the result. A Home Assistant integration that syncs by itself is planned.
+Home Assistant itself reads the scale over **its own Bluetooth** (USB adapter or ESPHome Bluetooth proxy), stores the brews and shows them in the card. Nothing runs on your computer.
 
-1. **Install the card from the Marketplace:** [![Open your Home Assistant instance and open this repository in the store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Ayakashi97&repository=hassos-mavo-lumicurve&category=plugin)
-   or Settings → Marketplace → ⋮ → Add from link → this repository, category Dashboard → Download. (By hand instead: copy `dist/mavo-lumicurve-card.js` to
-   `/config/www/mavo-lumicurve/` and add it under Settings → Dashboards → ⋮ → Resources as a JavaScript module.)
-2. On your Mac run `./run.sh`, then copy `data/brews_ha.json` to `/config/www/mavo-lumicurve/brews.json`.
-3. Add the card "Brew logbook (Mavo Lumicurve)" with `brews_url: /local/mavo-lumicurve/brews.json`.
+1. Have Bluetooth in Home Assistant in range of the scale (see [docs/INSTALL-HA.md](docs/INSTALL-HA.md)).
+2. **Install the integration from the Marketplace:** [![Open your Home Assistant instance and open this repository in the store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Ayakashi97&repository=hassos-mavo-lumicurve&category=integration)
+   (or Settings → Marketplace → ⋮ → Add from link → this repository, category Integration → Download), then **restart Home Assistant**.
+3. Wake the scale: Home Assistant discovers it (Settings → Devices & services → Discovered → Add).
+4. Add the card **Brew logbook (Mavo Lumicurve)** to a dashboard. It needs no configuration; the integration serves the card file itself.
 
-Full step-by-step guide, what you should see, troubleshooting and the Bluetooth requirements for the integration: **[docs/INSTALL-HA.md](docs/INSTALL-HA.md)**.
-All card options, colours and theme variables: **[docs/CONFIG.md](docs/CONFIG.md)**.
+Details, what you should see and troubleshooting: **[docs/INSTALL-HA.md](docs/INSTALL-HA.md)**. Card options, colours, theme variables: **[docs/CONFIG.md](docs/CONFIG.md)**.
+
+> The integration is new (0.9.0, written without a Bluetooth adapter in the test system): the sync is covered by tests with a simulated scale, but not yet by a live run in Home Assistant.
 
 ## The card
 
@@ -30,18 +31,12 @@ All card options, colours and theme variables: **[docs/CONFIG.md](docs/CONFIG.md
 ### Install
 See "Run it in Home Assistant" above and [docs/INSTALL-HA.md](docs/INSTALL-HA.md).
 
-Marketplace: the repository has the layout the Marketplace expects (`hacs.json`, category "Dashboard", file `dist/mavo-lumicurve-card.js`). Home Assistant 2026.11 and newer has the Marketplace built in; older versions use the HACS integration the same way.
-
 ### Minimal configuration
 ```yaml
 type: custom:mavo-lumicurve-card
-entity: sensor.mavo_lumicurve_brews     # attribute "brews"; or brews_url / brews (inline list)
-targets:
-  espresso: { time: [22, 30], yield: [34, 42] }
-  pourover: { time: [150, 210], yield: [250, 310] }
 ```
-All options, colours, theme variables, texts and where each setting lives: **[docs/CONFIG.md](docs/CONFIG.md)**.
-The card gets its data from an entity, a JSON file or an inline list; the integration that fills an entity automatically is planned (`docs/ROADMAP.md`).
+With the integration that is all: brews, ratings and the default targets come from it (Settings → Devices & services → Mavo Lumicurve → Configure). Anything you set in the card wins.
+Other sources (`entity`, `brews_url`, inline `brews`) still work. All options, colours, theme variables, texts and where each setting lives: **[docs/CONFIG.md](docs/CONFIG.md)**.
 
 ## The scale (what we found)
 
@@ -53,27 +48,29 @@ The card gets its data from an entity, a JSON file or an inline list; the integr
   real times for the latest run (`real_ts`); older runs show as "earlier".
 - A brew ends at `[MP] weight num N time T`; its yield is the last settled `[SW] lock=A-B-C` before it (B = 0.1 g).
 
-## Tools (Mac, Python)
+## Developer tools (Mac, Python)
+
+Only for development and reverse engineering; **Home Assistant does not need them**.
 
 ```bash
 ./run.sh                                 # first run creates .venv and installs bleak; syncs, parses, opens the card test page
 .venv/bin/python tools/discover.py       # find the scale, remember it in data/lumicurve.json
-.venv/bin/python tools/sync.py           # pull the log into data/scale_log_<time>.txt
+.venv/bin/python tools/sync.py           # pull the log into data/scale_log_<time>.txt (same protocol code as the integration)
 .venv/bin/python tools/parse.py data/scale_log_<time>.txt data/brews.json
-python3 tests/test_parse.py
+python3 -m unittest discover -s tests    # parser, merge, and a simulated scale for the download
 ```
-macOS needs Bluetooth permission for the terminal; only one program can be connected to the scale at a time. Parser rules can be changed in `settings.json`
-(copy `settings.json.example`). `tools/explorer.html` (Chrome, Web Bluetooth) lists services and logs raw bytes.
+macOS needs Bluetooth permission for the terminal; only one program can be connected to the scale at a time. `tools/explorer.html` (Chrome, Web Bluetooth) lists services and logs raw bytes.
 
 ## Repository layout
 
 | Path | Content |
 |---|---|
-| `dist/mavo-lumicurve-card.js` | the card (single file, no build step) |
+| `custom_components/mavo_lumicurve/` | the Home Assistant integration (`protocol.py`, `parser.py`, `brews.py` are pure Python; the rest is Home Assistant glue) |
+| `custom_components/mavo_lumicurve/www/mavo-lumicurve-card.js` | the card (single file, no build step, served by the integration) |
 | `card/test.html` | local test page with presets |
-| `tools/`, `run.sh`, `settings.json.example` | scale discovery, sync, parser |
-| `tests/` | parser tests with a real log excerpt |
-| `docs/` | `INSTALL-HA.md` (run it in Home Assistant), `CONFIG.md` (all settings), `ROADMAP.md` (integration plan, storage, open experiments), `RELEASING.md` (how to release) |
+| `tools/`, `run.sh`, `settings.json.example` | developer tools for the Mac |
+| `tests/` | unit tests (stdlib `unittest`) |
+| `docs/` | `INSTALL-HA.md`, `CONFIG.md` (all settings), `ROADMAP.md`, `RELEASING.md` |
 | `data/` | your logs and brews (not in git) |
 
 No licence is set yet.

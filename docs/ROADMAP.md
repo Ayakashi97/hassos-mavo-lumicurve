@@ -1,6 +1,6 @@
 # Roadmap: from card to a Home Assistant integration
 
-Status: the card, the Mac tools and the parser work (see the [README](../README.md)). What is missing is a Home Assistant integration that reads the scale by itself.
+Status (0.9.0): the integration is built (discovery, sync over Home Assistant's Bluetooth, storage, sensors, Sync now, options, card integration) and tested with a simulated scale. **Not yet run live** (waiting for a Bluetooth adapter). Still open: long-term statistics, an event entity per brew, diagnostics, repairs, export, the scale's record download `02 01 03` and setting its clock. The text below is the original plan.
 
 ## Open experiments (need the scale and a new sync)
 

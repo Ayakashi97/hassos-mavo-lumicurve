@@ -24,11 +24,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: python3 tests/test_parse.py && node --check dist/mavo-lumicurve-card.js
+      - run: python3 -m unittest discover -s tests && node --check custom_components/mavo_lumicurve/www/mavo-lumicurve-card.js
       - name: Release notes from CHANGELOG.md
         run: |
           v="${TAG#v}"
           awk -v v="$v" 'index($0, "## [" v "]") == 1 {p=1; next} /^## \[/ && p {exit} p' CHANGELOG.md > notes.md
           test -s notes.md || { echo "CHANGELOG.md has no section for $v"; exit 1; }
       - name: Create the release
-        run: gh release create "$TAG" dist/mavo-lumicurve-card.js --title "$TAG" --notes-file notes.md --verify-tag
+        run: gh release create "$TAG" custom_components/mavo_lumicurve/www/mavo-lumicurve-card.js --title "$TAG" --notes-file notes.md --verify-tag

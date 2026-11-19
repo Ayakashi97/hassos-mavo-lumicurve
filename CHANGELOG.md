@@ -5,6 +5,16 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Added
+- **Home Assistant integration** `mavo_lumicurve`: finds the scale by Bluetooth discovery, syncs the brew log over Home Assistant's own Bluetooth adapter or ESPHome proxy whenever the scale wakes up, and stores the brews (survives log rotation and backups include it). Sensors (last yield, time, flow, ratio, brew count, battery, last sync), a Sync now button, and an options form for all rules and targets.
+- The card reads brews, ratings and default targets from the integration (no configuration needed) and updates after each sync. The integration serves the card file itself.
+- Unit tests with a simulated scale for the log download and the brew merge.
+
+### Changed
+- **Breaking for installs:** the repository is now an *integration* for the Marketplace (category Integration), not a dashboard plugin. The card moved to `custom_components/mavo_lumicurve/www/`. See the migration note in `docs/INSTALL-HA.md`.
+- The Mac tools are developer tools only and use the same protocol and parser code as the integration.
+- Install guide rewritten around the integration.
+
 ## [0.8.3] - 2026-11-19
 
 ### Added

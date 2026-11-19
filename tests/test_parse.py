@@ -1,6 +1,6 @@
 import os, sys, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools"))
-from parse import parse
+from parse import parse, load
 
 class T(unittest.TestCase):
     def test_real_espresso(self):  # excerpt of a real scale log: one 34.0 g / 21 s shot

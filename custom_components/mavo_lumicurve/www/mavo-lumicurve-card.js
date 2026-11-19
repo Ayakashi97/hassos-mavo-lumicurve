@@ -77,15 +77,16 @@ input:focus-visible,textarea:focus-visible{outline:2px solid var(--a);outline-of
 
 class MavoLumicurveCard extends HTMLElement {
   static getConfigElement() { return document.createElement('mavo-lumicurve-card-editor'); }
-  static getStubConfig() { return { entity: 'sensor.mavo_lumicurve_brews', targets: { espresso: { time: [22, 30], yield: [34, 42] }, pourover: { time: [150, 210], yield: [250, 310] } } }; }
+  static getStubConfig() { return { targets: { espresso: { time: [22, 30], yield: [34, 42] }, pourover: { time: [150, 210], yield: [250, 310] } } }; }
   setConfig(c) {
     // targets: { espresso: {time:[min,max], yield:[..], flow:[..], ratio:[..]}, pourover: {...} }; flat target_time/yield/flow/ratio apply to both modes
-    this._c = { ...DEF, ...c };
+    this._cfg = c; this._srv = this._srv || {}; this._c = { ...DEF, ...this._srv, ...c };
+    this._int = !c.entity && !c.brews && !c.brews_url; // no other source given = read from the Mavo Lumicurve integration
     this._L = { ...LABELS[this._c.language] || LABELS.de, ...c.labels }; this._en = this._c.language === 'en';
     this._mode = this._c.default_mode; this._sel = null; this._menu = false; this._nopen = false; this._brews = null;
     this._applyVars();
     if (!this.shadowRoot) { const r = this.attachShadow({ mode: 'open' }); this._wire(r); }
-    this._notes = this._load(); if (c.brews) { this._brews = c.brews; this._draw(); } else this._fetch();
+    this._notes = this._int ? (this._notes || {}) : this._load(); if (c.brews) { this._brews = c.brews; this._draw(); } else if (this._int) this._ws(); else this._fetch();
   }
   _applyVars() { // explicit config wins; otherwise the theme variable --mlc-<name>; otherwise the built-in default
     const c = this._c, ha = c.theme === 'ha', set = (k, v) => this.style.setProperty(k, v);
@@ -120,16 +121,29 @@ class MavoLumicurveCard extends HTMLElement {
     });
     r.addEventListener('change', e => { const f = e.target.dataset.f; if (f && this._selId) { (this._notes[this._selId] ||= {})[f] = e.target.value; this._save(); this._draw(); } });
   }
-  set hass(h) { this._h = h; if (this._c?.entity) { const b = h.states[this._c.entity]?.attributes?.brews; if (b !== this._src) { this._src = b; this._brews = b || []; this._draw(); } } }
+  set hass(h) { const first = !this._h; this._h = h; if (this._int && first) this._ws(); if (this._c?.entity) { const b = h.states[this._c.entity]?.attributes?.brews; if (b !== this._src) { this._src = b; this._brews = b || []; this._draw(); } } }
+  async _ws() { // from the integration: brews, notes and its settings (targets, flow tile) as defaults; the card config wins
+    if (!this._h) return;
+    if (!this._unsub) { this._unsub = true; this._h.connection.subscribeEvents(() => this._ws(), 'mavo_lumicurve_synced').then(u => { this._unsub = u; }, () => { this._unsub = false; }); }
+    try {
+      const r = await this._h.callWS({ type: 'mavo_lumicurve/brews' });
+      this._srv = { targets: r.settings.targets, flow_value: r.settings.flow_value };
+      this._c = { ...DEF, ...this._srv, ...this._cfg };
+      this._notes = Object.fromEntries(r.brews.filter(b => b.stars || b.bean || b.note).map(b => [b.id, { stars: b.stars, bean: b.bean, note: b.note }]));
+      this._brews = r.brews;
+    } catch { this._brews = this._brews || []; }
+    this._draw();
+  }
   async _fetch() { if (!this._c.brews_url) return; try { this._brews = await (await fetch(this._c.brews_url, { cache: 'no-store' })).json(); } catch { this._brews = []; } this._draw(); }
   _load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } }
   async _save() {
+    if (this._int) { const o = this._notes[this._selId] || {}; try { await this._h.callWS({ type: 'mavo_lumicurve/note', id: this._selId, stars: o.stars || 0, bean: o.bean || '', note: o.note || '' }); } catch {} return; }
     try { localStorage.setItem(KEY, JSON.stringify(this._notes)); } catch {}
     try { await this._h?.callWS({ type: 'frontend/set_user_data', key: KEY, value: this._notes }); } catch {}
   }
   _disp(b) { const w = when(b.real_ts, this._en), L = this._L; return w || { short: L.earlier, date: L.earlierDate, time: '', full: L.earlierFull, year: 0 }; }
   _list() { // newest first; file order of the scale log = chronological
-    return (this._brews || []).map((b, i) => ({ ...b, id: b.ts + '|' + b.time_s + '|' + b.yield_g, i }))
+    return (this._brews || []).map((b, i) => ({ ...b, id: b.id || b.ts + '|' + b.time_s + '|' + b.yield_g, i }))
       .filter(b => (this._c.show_invalid || b.valid !== false) && (this._mode === 'all' || b.mode === this._mode))
       .sort((a, b) => (b.seq ?? b.i) - (a.seq ?? a.i));
   }
