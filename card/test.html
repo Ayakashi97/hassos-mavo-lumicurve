@@ -1,14 +1,32 @@
 <!doctype html>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Brew card test</title>
-<style>body{margin:0;padding:16px;background:radial-gradient(circle at 20% 0,#3a2c1c,#14100b);min-height:100vh}.w{max-width:440px;margin:auto}</style>
+<style>
+  body{margin:0;padding:16px;background:radial-gradient(circle at 20% 0,#3a2c1c,#14100b);min-height:100vh;font:14px system-ui;color:#eee}
+  body.light{background:#eef0f3;color:#222;--primary-text-color:#1b1b1b;--card-background-color:#fff}
+  .w{max-width:440px;margin:auto}.bar{max-width:440px;margin:0 auto 12px;display:flex;gap:6px;flex-wrap:wrap}
+  button{font:inherit;padding:6px 12px;border-radius:999px;border:1px solid #888;background:transparent;color:inherit;cursor:pointer}
+</style>
+<div class="bar" id="bar"></div>
 <div class="w"><nofree-brew-card id="c"></nofree-brew-card></div>
 <script>document.write('<script src="nofree-brew-card.js?' + Date.now() + '"><\/script>')</script>
 <script>
-  // every key except brews_url/entity is optional; see README "Card options"
-  c.setConfig({ brews_url: '../data/brews.json', accent: '#e8b54a', chart_count: 30,
-    // placeholder targets per type; edit to your taste
-    targets: {
-      espresso: { time: [22, 30], yield: [34, 42], flow: [1.3, 2.2], ratio: [1.8, 2.5] },
-      pourover: { time: [150, 210], yield: [250, 310], flow: [1.3, 2.0], ratio: [15, 17] } } })
+  // every key except the data source is optional; see docs/CONFIG.md
+  const base = { brews_url: '../data/brews.json',
+    targets: { espresso: { time: [22, 30], yield: [34, 42], flow: [1.3, 2.2], ratio: [1.8, 2.5] }, pourover: { time: [150, 210], yield: [250, 310], flow: [1.3, 2], ratio: [15, 17] } } };
+  const presets = {
+    'Default (dark gold)': {},
+    'Blue accent': { accent: '#5aa9ff', color_pill: '#2b4f8a', background: '#1c2a40', background_end: '#101a2a' },
+    'HA theme (light page)': { theme: 'ha', accent: '#c47f00' },
+    'English, big text': { language: 'en', font_scale: 115, title: 'Coffee log' },
+    'Minimal (tiles only)': { show_graph: false, show_chart: false, show_title: false, show_filter: false, show_notes: false },
+    'Square, flat': { border_radius: 4, background: '#202020', accent: '#ff5d73', color_in: '#4ade80', color_out: '#fbbf24' },
+  };
+  const bar = document.getElementById('bar');
+  for (const [name, cfg] of Object.entries(presets)) {
+    const b = document.createElement('button'); b.textContent = name;
+    b.onclick = () => { document.body.classList.toggle('light', cfg.theme === 'ha'); c.setConfig({ ...base, ...cfg }); };
+    bar.appendChild(b);
+  }
+  c.setConfig(base);
 </script>

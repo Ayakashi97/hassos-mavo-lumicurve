@@ -10,8 +10,20 @@ The scale has no real clock: after every cold boot (`[SYS] reboot reason`) it re
 So `ts` is only that internal clock. For the LAST boot we know the real time of the final log line (the sync
 connection), so `real_ts` = the real time of each brew in that run. Earlier runs have `real_ts: null`.
 """
-import json, re, sys
+import json, os, re, sys
 from datetime import datetime, timedelta
+
+# ---- tunable rules; override any of them in <repo>/settings.json (see docs/CONFIG.md)
+SETTINGS = {
+    "pourover_min_s": 90,    # a brew of at least this many seconds counts as filter/pour-over, shorter ones as espresso
+    "min_time_s": 8,         # shorter brews are tare/noise events (valid: false)
+    "min_yield_g": 5,        # lighter brews are tare/noise events (valid: false)
+    "dose_g": [10, 20],      # a settled weight in this range before the brew is taken as the dose (ground coffee)
+    "sync_delay_s": 10,      # file name time + this = moment of the BLE connection (anchor of real_ts)
+}
+_cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "settings.json")
+if os.path.exists(_cfg):
+    SETTINGS.update(json.load(open(_cfg)))
 
 LINE = re.compile(r"^\[\s*(\d+):\s*(\d+):\s*(\d+)\][IDE] \[(\w+)\] (.*)$")
 LOCK = re.compile(r"lock=(\d+)-(\d+)-(\d)")
@@ -76,7 +88,7 @@ def parse(text, synced_at=None):
             n = NUM.search(msg)
             if n and last_lock is not None:
                 secs = int(n[2])
-                dose = next((b for b in reversed(locks[:-1]) if 100 <= b <= 200), None)
+                dose = next((b for b in reversed(locks[:-1]) if SETTINGS["dose_g"][0] * 10 <= b <= SETTINGS["dose_g"][1] * 10), None)
                 brews.append({
                     "seq": len(brews),  # file order = chronological order
                     "run": run,
@@ -84,9 +96,9 @@ def parse(text, synced_at=None):
                     "_sdt": sdt,
                     "real_ts": None,
                     # the scale labels long pours "espresso" too, so classify by duration
-                    "mode": "pourover" if secs >= 90 else "espresso",
+                    "mode": "pourover" if secs >= SETTINGS["pourover_min_s"] else "espresso",
                     # shots under 8 s or 5 g are tare/noise events, not drinks
-                    "valid": secs >= 8 and last_lock >= 50,
+                    "valid": secs >= SETTINGS["min_time_s"] and last_lock >= SETTINGS["min_yield_g"] * 10,
                     "yield_g": last_lock / 10,
                     "time_s": secs,
                     "flow_gs": round(last_lock / 10 / secs, 2),  # average flow, g/s (~ml/s)
@@ -114,7 +126,7 @@ if __name__ == "__main__":
     else:  # sync.py names the file after the moment the sync started; the connection follows ~10 s later
         f = re.search(r"scale_log_(\d{8})_(\d{6})", args[0])
         if f:
-            synced = datetime.strptime(f[1] + f[2], "%Y%m%d%H%M%S") + timedelta(seconds=10)
+            synced = datetime.strptime(f[1] + f[2], "%Y%m%d%H%M%S") + timedelta(seconds=SETTINGS["sync_delay_s"])
     out = parse(open(args[0], errors="replace").read(), synced)
     json.dump(out, open(args[1], "w") if len(args) > 1 else sys.stdout, indent=1)
     print(len(out), "brews", file=sys.stderr)

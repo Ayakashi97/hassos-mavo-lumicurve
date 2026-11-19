@@ -1,7 +1,7 @@
-/* nofree-brew-card · v0.6 · Mavo Lumicurve brew logbook
-   config: { type: 'custom:nofree-brew-card', entity: 'sensor.mavo_brews' }  (attribute `brews` = list from parse.py)
-           or { brews_url: 'brews.json' } for the local test page.  All options: README.
-   Notes (bean, rating, text) live in HA user data (frontend/set_user_data), localStorage as fallback. */
+/* nofree-brew-card · v0.7 · Mavo Lumicurve brew logbook
+   Everything is configurable: see docs/CONFIG.md (options, colours, CSS variables, labels, where each thing lives).
+   Source of the brews: `entity` (attribute `brews`), `brews_url` (JSON file) or `brews` (inline list).
+   Notes/stars live in HA user data (frontend/set_user_data), localStorage as fallback. */
 const KEY = 'nofree_brew_notes';
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const IC = { // 24x24 stroke icons
@@ -11,78 +11,92 @@ const IC = { // 24x24 stroke icons
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', left: '<path d="M15 6l-6 6 6 6"/>', right: '<path d="M9 6l6 6-6 6"/>', edit: '<path d="M4 20l4-1 11-11-3-3L5 16zM14 7l3 3"/>',
 };
 const ic = (n, c = '') => `<svg class="ic ${c}" viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
-const when = ts => { // "2022-03-18 04:40:28" -> parts (the scale's own clock); "? 03:22:14" = date unknown
-  const m = /^(\d{4})-(\d\d)-(\d\d) (\d\d:\d\d)(:\d\d)?/.exec(ts); const hm = (ts.split(' ')[1] || '').slice(0, 5);
-  return m ? { short: `${m[3]}.${m[2]}.`, date: `${m[3]}.${m[2]}.${m[1]}`, time: m[4], full: `${m[3]}.${m[2]}.${m[1]} ${m[4]}`, year: +m[1] } : { short: '?', date: 'Datum unbekannt', time: hm, full: 'Datum unbekannt ' + hm, year: 0 };
+
+// ---- texts: `language` picks a set, `labels: {key: 'text'}` overrides single entries
+const LABELS = {
+  de: { title: 'Logbuch', all: 'Alle', espresso: 'Espresso', pourover: 'Filter', ratio: 'Verhältnis (x)', flow: 'Fluss (g/s)', weight: 'Gewicht (g)', time: 'Zeit', target: 'Ziel', inTarget: 'im Ziel', older: 'Älterer Bezug', newer: 'Neuerer Bezug', pick: 'Bezug auswählen', bean: 'Bohne', note: 'Notiz', editNote: 'Notiz bearbeiten', stars: 'Sterne', chartTime: 'Bezugszeit (s)', chartFlow: 'Durchfluss (g/s)', last: 'letzte', btnTime: 'Zeit', btnFlow: 'Fluss', earlier: 'früher', earlierDate: 'Frühere Sitzung', earlierFull: 'frühere Sitzung (Datum unbekannt)', estimated: 'geschätzt', empty: 'Noch keine Brühungen.', dose: 'Mehl', pickHint: 'Balken antippen zum Auswählen', graphAria: 'Gewichtsverlauf über {s} Sekunden', avg: 'Ø' },
+  en: { title: 'Logbook', all: 'All', espresso: 'Espresso', pourover: 'Filter', ratio: 'Ratio (x)', flow: 'Flow (g/s)', weight: 'Weight (g)', time: 'Time', target: 'Target', inTarget: 'on target', older: 'Older brew', newer: 'Newer brew', pick: 'Select brew', bean: 'Beans', note: 'Note', editNote: 'Edit note', stars: 'stars', chartTime: 'Brew time (s)', chartFlow: 'Flow (g/s)', last: 'last', btnTime: 'Time', btnFlow: 'Flow', earlier: 'earlier', earlierDate: 'Earlier session', earlierFull: 'earlier session (date unknown)', estimated: 'estimated', empty: 'No brews yet.', dose: 'dose', pickHint: 'tap a bar to select', graphAria: 'Weight over {s} seconds', avg: 'Ø' },
 };
-const disp = b => b.real_ts ? when(b.real_ts) : { short: 'früher', date: 'Frühere Sitzung', time: '', full: 'frühere Sitzung (Datum unbekannt)', year: 0 };
-const CSS = a => `
-:host{--a:${a};--mut:rgba(244,239,230,.62);display:block;color:#f4efe6;font:14px/1.35 system-ui,-apple-system,sans-serif}
+// ---- defaults of every option (a key set in the card config always wins; a CSS variable --nbc-* wins over the built-in default)
+const DEF = { language: 'de', theme: 'dark', chart_count: 30, chart_metric: 'time', default_mode: 'all', flow_value: 'auto', show_invalid: false, border_radius: 20, font_scale: 100,
+  show_title: true, show_filter: true, show_tiles: true, show_graph: true, show_chart: true, show_stars: true, show_notes: true, show_menu: true, targets: {} };
+const VARS = { // config key -> [css variable, theme variable name, built-in default]
+  accent: ['--a', 'accent', '#e8b54a'], color_ratio: ['--c-r', 'ratio', '#f0883e'], color_flow: ['--c-f', 'flow', '#6fd26b'], color_weight: ['--c-w', 'weight', '#9b8cff'], color_time: ['--c-t', 'time', '#e266a8'],
+  color_in: ['--in', 'in', '#7fdc8a'], color_out: ['--out', 'out', '#f0a06a'], color_pill: ['--pill', 'pill', 'color-mix(in srgb,var(--a) 20%,#7a5cff 20%)'],
+};
+const when = (ts, en) => { // "2026-11-19 13:53:56" -> parts; null when unknown
+  const m = /^(\d{4})-(\d\d)-(\d\d) (\d\d:\d\d)(:\d\d)?/.exec(ts || ''); if (!m) return null;
+  const date = en ? `${m[2]}/${m[3]}/${m[1]}` : `${m[3]}.${m[2]}.${m[1]}`;
+  return { short: en ? `${m[2]}/${m[3]}` : `${m[3]}.${m[2]}.`, date, time: m[4], full: `${date} ${m[4]}`, year: +m[1] };
+};
+const CSS = `
+:host{display:block;color:var(--tx);font:calc(14px*var(--fsc))/1.35 system-ui,-apple-system,sans-serif;--mut:color-mix(in srgb,var(--tx) 62%,transparent);--s1:color-mix(in srgb,var(--tx) 8%,transparent);--s2:color-mix(in srgb,var(--tx) 13%,transparent);--bd:color-mix(in srgb,var(--tx) 18%,transparent);--bd2:color-mix(in srgb,var(--tx) 25%,transparent)}
 *{box-sizing:border-box}
-.card{container-type:inline-size;border-radius:20px;padding:14px;background:linear-gradient(155deg,#4a3d2c,#2a2217);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 10px 30px rgba(0,0,0,.28)}
+.card{container-type:inline-size;border-radius:var(--r);padding:14px;background:linear-gradient(155deg,var(--bg1),var(--bg2));border:1px solid var(--bd);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--tx) 20%,transparent),0 10px 30px rgba(0,0,0,.28)}
 .ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-header .logo{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--a) 22%,transparent);color:var(--a)}
-header h2{margin:0;font-size:15px;font-weight:650;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}header .seg button{min-height:34px;padding:0 11px;font-size:13px}header .logo{width:32px;height:32px}header h2 small{display:block;font-weight:400;font-size:12px;color:var(--mut)}
-.seg{display:flex;gap:6px}
-button{font:inherit;color:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);cursor:pointer;transition:transform .12s,background .15s}
-button:hover{background:rgba(255,255,255,.12)}button:active{transform:scale(.97)}
+header .logo{width:32px;height:32px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--a) 22%,transparent);color:var(--a)}
+header h2{margin:0;font-size:1.07em;font-weight:650;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg{display:flex;gap:6px}header .seg button{min-height:34px;padding:0 11px;font-size:.93em}
+button{font:inherit;color:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--bd);background:var(--s1);cursor:pointer;transition:transform .12s,background .15s}
+button:hover{background:var(--s2)}button:active{transform:scale(.97)}
 button.on{background:color-mix(in srgb,var(--a) 22%,transparent);color:var(--a);border-color:var(--a)}
 button:focus-visible,.row:focus-visible{outline:2px solid var(--a);outline-offset:2px}
-  .hero{display:block;padding:10px;border-radius:16px;background:rgba(0,0,0,.2);margin-bottom:12px}
-.hero .big{font-size:44px;font-weight:700;letter-spacing:-.02em;line-height:1}.hero .big small{font-size:16px;font-weight:500;color:var(--mut);margin-left:4px}
-.hero .sub{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.09);font-size:12px}.chip .ic{width:14px;height:14px}
-.chip.warn{background:rgba(230,120,90,.22);color:#f0a08c}.chip.ok{background:color-mix(in srgb,var(--a) 24%,transparent);color:var(--a)}
-.lab{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:6px}
-.ring{position:relative;width:104px;height:104px}.ring svg{width:104px;height:104px;transform:rotate(-90deg)}
-.ring circle{fill:none;stroke-width:9;stroke-linecap:round}.ring .bg{stroke:rgba(255,255,255,.1)}.ring .fg{stroke:var(--a);transition:stroke-dashoffset .6s}
-.ring div{position:absolute;inset:0;display:grid;place-content:center;text-align:center;font-size:22px;font-weight:700}.ring small{display:block;font-size:11px;font-weight:400;color:var(--mut)}
-.chart{margin:4px 0 14px}.chart svg{width:100%;height:auto;display:block}.chart text{fill:var(--mut);font-size:6.5px}.chart .vl{fill:rgba(244,239,230,.85)}.chart .vl.cur{fill:var(--a);font-weight:700}.chart rect.b{cursor:pointer}.chart rect.b.cur{stroke:#fff;stroke-width:1}
-.chart rect.b{fill:var(--a);opacity:.85}.chart rect.b.out{opacity:.3}.chart rect.band{fill:var(--a);opacity:.1}
-.row{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:10px;border-radius:14px;cursor:pointer}
-.row:hover{background:rgba(255,255,255,.07)}
-.row .t{width:52px;height:44px;border-radius:14px;display:grid;place-items:center;text-align:center;background:rgba(255,255,255,.08);font-size:11px;line-height:1.25;font-weight:600}
-.row .t.ok{background:color-mix(in srgb,var(--a) 24%,transparent);color:var(--a)}
-.row b{font-weight:600}.row small{display:block;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.row .r{text-align:right;font-size:12px;color:var(--mut)}.stars{color:var(--a);letter-spacing:1px}
-.bar{height:3px;border-radius:2px;background:rgba(255,255,255,.1);margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--a);border-radius:2px}
-.pillrow{display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:12px}
-.pill{padding:5px 14px;border-radius:999px;background:color-mix(in srgb,var(--a) 20%,#7a5cff 20%);font-size:12px;font-weight:600;white-space:nowrap}
 button.icon{min-width:40px;padding:0}button:disabled{opacity:.35;cursor:default}
-.tiles{display:grid;grid-template-columns:1fr 1fr;border-radius:16px;margin-bottom:10px}
-.tile{padding:8px 4px 6px;text-align:center}.tile.r,.tile.f{border-bottom:1px solid rgba(255,255,255,.25)}.tile.r,.tile.w{border-right:1px solid rgba(255,255,255,.25)}
-.tile b{display:block;font-size:clamp(24px,10cqw,34px);font-weight:700;letter-spacing:-.02em;line-height:1.1}.tile span{font-size:12px}.tile small{display:block;font-size:11px;color:var(--mut);min-height:13px}
-.tile.r span{color:#f0883e}.tile.f span{color:#6fd26b}.tile.w span{color:#9b8cff}.tile.t span{color:#e266a8}
-.graph svg{width:100%;display:block}.graph text{fill:var(--mut);font-size:9px}.graph .cap{fill:#9b8cff;font-size:10px}
-.graph .gr{stroke:rgba(255,255,255,.25);stroke-width:1;stroke-dasharray:2 3}.graph .area{fill:var(--a);opacity:.1}.graph .end{stroke:rgba(255,255,255,.55);stroke-width:1;stroke-dasharray:3 3}
-.graph .mk{fill:#fff}.graph .wl{fill:none;stroke:var(--a);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.graph .wl.dash{stroke-dasharray:5 4;opacity:.85}.graph .wd{fill:var(--a)}.graph .note{font-size:11px;color:var(--mut)}
-.row.sel{background:color-mix(in srgb,var(--a) 16%,transparent)}
-.pilltoggle{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;min-height:40px;padding:5px 12px;border-radius:999px;background:color-mix(in srgb,var(--a) 20%,#7a5cff 20%);font-size:12px;font-weight:600;white-space:nowrap;border:1px solid rgba(255,255,255,.2)}
-.pillrow{position:relative}
-.menu{position:absolute;z-index:5;left:0;right:0;top:46px;max-height:340px;overflow:auto;padding:6px;border-radius:18px;background:linear-gradient(160deg,rgba(60,48,34,.96),rgba(30,24,17,.97));border:1px solid rgba(255,255,255,.2);box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.2);backdrop-filter:blur(18px) saturate(1.25)}
-.tile small.in{color:#7fdc8a}.tile small.out{color:#f0a06a}.tile.in b{color:#fff}
-.notes{margin:6px 0 0;display:grid;gap:8px}.notes .st{display:flex;gap:6px;align-items:center}.notes .st button{min-width:40px;padding:0}.notes .st button.on .ic{fill:var(--a)}.notes .st .icon{margin-left:auto}.mut{font-size:12px;color:var(--mut)}
-.curve{margin:0 0 12px}.edit .curve{margin:0}.curve svg{width:100%;display:block}.curve text{fill:var(--mut);font-size:9px}
-.curve .wl{fill:none;stroke:var(--a);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.curve .wl.dash{stroke-dasharray:5 4;opacity:.7}
-.curve .wd{fill:var(--a)}.curve .fb{fill:var(--a);opacity:.28}.curve .ax{stroke:rgba(255,255,255,.2);stroke-width:1}.curve .note{font-size:11px;color:var(--mut)}
-.day{margin:12px 0 2px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
-.edit{padding:12px;margin:2px 0 8px;border-radius:14px;background:rgba(0,0,0,.22);display:grid;gap:8px}
-input,textarea{font:inherit;color:inherit;padding:9px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07)}
+.hero{display:block;padding:10px;border-radius:calc(var(--r) * .8);background:var(--hero);margin-bottom:12px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--s1);font-size:.86em}.chip .ic{width:14px;height:14px}
+.chip.ok{background:color-mix(in srgb,var(--in) 24%,transparent);color:var(--in)}
+.lab{font-size:.79em;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:6px}
+.pillrow{position:relative;display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:12px}
+.pilltoggle{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;min-height:40px;padding:5px 12px;border-radius:999px;background:var(--pill);font-size:.86em;font-weight:600;white-space:nowrap;border:1px solid var(--bd)}
+.pilltoggle.static{cursor:default;justify-content:center}
+.tiles{display:grid;grid-template-columns:1fr 1fr;margin-bottom:10px}
+.tile{padding:8px 4px 6px;text-align:center}.tile.r,.tile.f{border-bottom:1px solid var(--bd2)}.tile.r,.tile.w{border-right:1px solid var(--bd2)}
+.tile b{display:block;font-size:calc(clamp(24px,10cqw,34px)*var(--fsc));font-weight:700;letter-spacing:-.02em;line-height:1.1}.tile span{font-size:.86em}.tile small{display:block;font-size:.79em;color:var(--mut);min-height:13px}
+.tile.r span{color:var(--c-r)}.tile.f span{color:var(--c-f)}.tile.w span{color:var(--c-w)}.tile.t span{color:var(--c-t)}
+.tile small.in{color:var(--in)}.tile small.out{color:var(--out)}
+.graph svg{width:100%;display:block}.graph text{fill:var(--mut);font-size:9px}
+.graph .gr{stroke:var(--bd2);stroke-width:1;stroke-dasharray:2 3}.graph .area{fill:var(--a);opacity:.1}.graph .end{stroke:var(--mut);stroke-width:1;stroke-dasharray:3 3}
+.graph .mk{fill:var(--tx)}.graph .wl{fill:none;stroke:var(--a);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.graph .wl.dash{stroke-dasharray:5 4;opacity:.85}.graph .wd{fill:var(--a)}
+.chart{margin:4px 0 14px}.chart svg{width:100%;height:auto;display:block}.chart text{fill:var(--mut);font-size:6.5px}.chart .vl{fill:color-mix(in srgb,var(--tx) 85%,transparent)}.chart .vl.cur{fill:var(--a);font-weight:700}
+.chart rect.b{fill:var(--a);opacity:.85;cursor:pointer}.chart rect.b.out{opacity:.3}.chart rect.b.cur{stroke:var(--tx);stroke-width:1}.chart rect.band{fill:var(--in);opacity:.14}.chart .ax{stroke:var(--bd2);stroke-width:1}
+.row{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:10px;border-radius:14px;cursor:pointer}
+.row:hover{background:var(--s1)}.row.sel{background:color-mix(in srgb,var(--a) 16%,transparent)}
+.row .t{width:52px;height:44px;border-radius:14px;display:grid;place-items:center;text-align:center;background:var(--s1);font-size:.79em;line-height:1.25;font-weight:600}
+.row .t.ok{background:color-mix(in srgb,var(--in) 24%,transparent);color:var(--in)}
+.row b{font-weight:600}.row small{display:block;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .r{text-align:right;font-size:.86em;color:var(--mut)}.stars{color:var(--a);letter-spacing:1px}
+.menu{position:absolute;z-index:5;left:0;right:0;top:46px;max-height:340px;overflow:auto;padding:6px;border-radius:18px;background:linear-gradient(160deg,var(--bg1),var(--bg2));border:1px solid var(--bd);box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 1px 0 color-mix(in srgb,var(--tx) 20%,transparent)}
+.day{margin:12px 0 2px 10px;font-size:.79em;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
+.notes{margin:6px 0 0;display:grid;gap:8px}.notes .st{display:flex;gap:6px;align-items:center}.notes .st button{min-width:40px;padding:0}.notes .st button.on .ic{fill:var(--a)}.notes .st .icon{margin-left:auto}.mut{font-size:.86em;color:var(--mut)}
+input,textarea{font:inherit;color:inherit;padding:9px 12px;border-radius:12px;border:1px solid var(--bd);background:var(--s1)}
 input:focus-visible,textarea:focus-visible{outline:2px solid var(--a);outline-offset:1px}
-.edit .st{display:flex;gap:6px}.edit .st button{min-width:40px;padding:0}.edit .st button.on .ic{fill:var(--a)}
 .empty{opacity:.7;padding:20px 0;text-align:center}
 @media (max-width:360px){header .logo{display:none}}
-
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}`;
 
 class NofreeBrewCard extends HTMLElement {
+  static getConfigElement() { return document.createElement('nofree-brew-card-editor'); }
+  static getStubConfig() { return { entity: 'sensor.mavo_lumicurve_brews', targets: { espresso: { time: [22, 30], yield: [34, 42] }, pourover: { time: [150, 210], yield: [250, 310] } } }; }
   setConfig(c) {
     // targets: { espresso: {time:[min,max], yield:[..], flow:[..], ratio:[..]}, pourover: {...} }; flat target_time/yield/flow/ratio apply to both modes
-    this._c = { chart_count: 30, chart_metric: 'time', show_invalid: false, targets: {}, ...c };
-    this._mode = 'all'; this._sel = null; this._menu = false; this._nopen = false; this._brews = null;
+    this._c = { ...DEF, ...c };
+    this._L = { ...LABELS[this._c.language] || LABELS.de, ...c.labels }; this._en = this._c.language === 'en';
+    this._mode = this._c.default_mode; this._sel = null; this._menu = false; this._nopen = false; this._brews = null;
+    this._applyVars();
     if (!this.shadowRoot) { const r = this.attachShadow({ mode: 'open' }); this._wire(r); }
     this._notes = this._load(); if (c.brews) { this._brews = c.brews; this._draw(); } else this._fetch();
+  }
+  _applyVars() { // explicit config wins; otherwise the theme variable --nbc-<name>; otherwise the built-in default
+    const c = this._c, ha = c.theme === 'ha', set = (k, v) => this.style.setProperty(k, v);
+    const pick = (key, name, def) => (c[key] !== undefined && c[key] !== '' ? c[key] : `var(--nbc-${name}, ${def})`);
+    for (const [key, [v, name, def]] of Object.entries(VARS)) set(v, pick(key, name, def));
+    const haBg = 'var(--ha-card-background, var(--card-background-color, #2a2217))';
+    set('--tx', ha ? 'var(--primary-text-color, #f4efe6)' : pick('text_color', 'text', '#f4efe6'));
+    set('--bg1', ha ? haBg : pick('background', 'bg', '#4a3d2c'));
+    set('--bg2', ha ? haBg : (c.background && c.background_end === undefined ? c.background : pick('background_end', 'bg2', '#2a2217')));
+    set('--hero', ha ? 'color-mix(in srgb, var(--tx) 5%, transparent)' : 'rgba(0,0,0,.2)');
+    set('--r', `${+c.border_radius}px`); set('--fsc', String((+c.font_scale || 100) / 100));
   }
   _wire(r) { // ShadowRoot has no onclick property, so use listeners (registered once)
     r.addEventListener('click', e => {
@@ -113,6 +127,7 @@ class NofreeBrewCard extends HTMLElement {
     try { localStorage.setItem(KEY, JSON.stringify(this._notes)); } catch {}
     try { await this._h?.callWS({ type: 'frontend/set_user_data', key: KEY, value: this._notes }); } catch {}
   }
+  _disp(b) { const w = when(b.real_ts, this._en), L = this._L; return w || { short: L.earlier, date: L.earlierDate, time: '', full: L.earlierFull, year: 0 }; }
   _list() { // newest first; file order of the scale log = chronological
     return (this._brews || []).map((b, i) => ({ ...b, id: b.ts + '|' + b.time_s + '|' + b.yield_g, i }))
       .filter(b => (this._c.show_invalid || b.valid !== false) && (this._mode === 'all' || b.mode === this._mode))
@@ -124,16 +139,16 @@ class NofreeBrewCard extends HTMLElement {
   _states(b) { const t = this._tg(b.mode); return { time: this._st(b.time_s, t.time), yield: this._st(b.yield_g, t.yield), flow: this._st(this._flow(b), t.flow), ratio: this._st(b.ratio, t.ratio) }; }
   _ok(b) { const s = Object.values(this._states(b)); return s.includes('in') && !s.includes('out'); }
   _chart(list) {
-    const fl = this._c.chart_metric === 'flow', val = b => fl ? this._flow(b) : b.time_s, mode = this._mode === 'pourover' ? 'pourover' : 'espresso', tt = this._tg(mode)[fl ? 'flow' : 'time'];
+    const L = this._L, fl = this._c.chart_metric === 'flow', val = b => fl ? this._flow(b) : b.time_s, mode = this._mode === 'pourover' ? 'pourover' : 'espresso', tt = this._tg(mode)[fl ? 'flow' : 'time'];
     const d = list.filter(b => b.mode === mode).slice(0, this._c.chart_count).reverse(); /* long pours would flatten the espresso bars */
     if (!d.length) return '';
     const vs = d.map(val).sort((p, q) => p - q), cap = Math.max(vs[Math.floor(0.9 * (vs.length - 1))] * 1.2, tt ? tt[1] * 1.2 : 0, fl ? 1 : 10); // an outlier must not flatten all other bars
     const max = Math.min(Math.max(fl ? 1 : 10, vs[vs.length - 1], tt ? tt[1] : 0), cap), X0 = 22, w = (300 - X0) / d.length, y = v => 64 - 50 * Math.min(v, max) / max;
     const fmt = v => fl ? v.toFixed(1) : String(v), step = Math.ceil((fmt(max).length * 4 + 1) / w); // label every n-th bar so numbers never overlap
-        return `<div class="chart"><div class="lab" style="display:flex;justify-content:space-between;align-items:center">${fl ? 'Durchfluss (g/s)' : 'Bezugszeit (s)'} · letzte ${d.length}${mode === 'pourover' ? ' Filter' : ''}<span class="seg">${[['time', 'Zeit'], ['flow', 'Fluss']].map(([k, t]) => `<button data-c="${k}" class="${(fl ? 'flow' : 'time') === k ? 'on' : ''}" style="min-height:32px;padding:0 10px">${t}</button>`).join('')}</span></div><svg viewBox="0 0 300 72" role="img" aria-label="${fl ? 'Durchfluss' : 'Bezugszeit'} der letzten ${d.length} Brühungen; Balken antippen zum Auswählen">
+    return `<div class="chart"><div class="lab" style="display:flex;justify-content:space-between;align-items:center">${fl ? L.chartFlow : L.chartTime} · ${L.last} ${d.length}${mode === 'pourover' ? ' ' + L.pourover : ''}<span class="seg">${[['time', L.btnTime], ['flow', L.btnFlow]].map(([k, t]) => `<button data-c="${k}" class="${(fl ? 'flow' : 'time') === k ? 'on' : ''}" style="min-height:32px;padding:0 10px">${esc(t)}</button>`).join('')}</span></div><svg viewBox="0 0 300 72" role="img" aria-label="${fl ? L.chartFlow : L.chartTime}; ${L.pickHint}">
       ${tt ? `<rect class="band" x="${X0}" y="${y(tt[1])}" width="${300 - X0}" height="${y(tt[0]) - y(tt[1])}" rx="3"/>` : ''}
-      <text class="ya" x="${X0 - 3}" y="${y(max) + 3}" text-anchor="end">${fmt(max)}</text><text class="ya" x="${X0 - 3}" y="67" text-anchor="end">0</text><line class="ax" x1="${X0}" x2="300" y1="64.5" y2="64.5"/>
-      ${d.map((b, i) => `<rect class="b ${this._st(val(b), tt) === 'out' ? 'out' : ''} ${b.id === this._selId ? 'cur' : ''}" data-pick="${esc(b.id)}" x="${X0 + i * w + 1}" y="${y(val(b))}" width="${Math.max(w - 2, 1)}" height="${64 - y(val(b))}" rx="2"><title>${esc(disp(b).full)}: ${fmt(val(b))}</title></rect>
+      <text x="${X0 - 3}" y="${y(max) + 3}" text-anchor="end">${fmt(max)}</text><text x="${X0 - 3}" y="67" text-anchor="end">0</text><line class="ax" x1="${X0}" x2="300" y1="64.5" y2="64.5"/>
+      ${d.map((b, i) => `<rect class="b ${this._st(val(b), tt) === 'out' ? 'out' : ''} ${b.id === this._selId ? 'cur' : ''}" data-pick="${esc(b.id)}" x="${X0 + i * w + 1}" y="${y(val(b))}" width="${Math.max(w - 2, 1)}" height="${64 - y(val(b))}" rx="2"><title>${esc(this._disp(b).full)}: ${fmt(val(b))}</title></rect>
         ${(d.length - 1 - i) % step === 0 ? `<text class="vl ${b.id === this._selId ? 'cur' : ''}" x="${X0 + i * w + w / 2}" y="${y(val(b)) - 2}" text-anchor="middle">${fmt(val(b))}</text>` : ''}`).join('')}</svg></div>`;
   }
   _nice(v) { return [20, 40, 70, 100, 140, 200, 300, 400, 600].find(s => s >= v) || Math.ceil(v / 100) * 100; }
@@ -148,8 +163,8 @@ class NofreeBrewCard extends HTMLElement {
     const L = 26, R = 292, Tp = 18, B = 90, x = t => L + (R - L) * t / xm, y = g => B - (B - Tp) * g / ym;
     const xt = []; for (let t = 0; t <= xm; t += step) xt.push(t);
     const path = pts.map((p, i) => (i ? 'L' : 'M') + x(p[0]).toFixed(1) + ' ' + y(p[1]).toFixed(1)).join('');
-    return `<div class="graph"><svg viewBox="0 0 300 112" role="img" aria-label="Gewichtsverlauf über ${T} Sekunden">
-      <text x="2" y="9">(g)</text><text x="298" y="9" text-anchor="end">${real ? '(s)' : '(s) · geschätzt'}</text>
+    return `<div class="graph"><svg viewBox="0 0 300 112" role="img" aria-label="${esc(this._L.graphAria.replace('{s}', T))}">
+      <text x="2" y="9">(g)</text><text x="298" y="9" text-anchor="end">${real ? '(s)' : '(s) · ' + esc(this._L.estimated)}</text>
       ${[0, .5, 1].map(f => `<line class="gr" x1="${L}" x2="${R}" y1="${y(ym * f)}" y2="${y(ym * f)}"/><text x="${L - 4}" y="${y(ym * f) + 3}" text-anchor="end">${Math.round(ym * f)}</text>`).join('')}
       ${xt.map(t => `<text x="${x(t)}" y="${B + 12}" text-anchor="middle">${t}</text>`).join('')}
       <path class="area" d="${path}L${x(T)} ${B}L${L} ${B}Z"/>
@@ -157,44 +172,116 @@ class NofreeBrewCard extends HTMLElement {
       <path class="wl ${real ? '' : 'dash'}" d="${path}"/>${real ? pts.slice(1, -1).map(p => `<circle class="wd" cx="${x(p[0])}" cy="${y(p[1])}" r="2.4"/>`).join('') : ''}</svg></div>`;
   }
   _hero(b, pos, n, l) {
-    const real = (b.curve || []).length >= 5, pk = real ? this._peak(b) : 0, m = `${Math.floor(b.time_s / 60)}:${String(b.time_s % 60).padStart(2, '0')}`;
-    const t = this._tg(b.mode), s = this._states(b), rng = (r, u = '') => r ? `Ziel ${r[0]}–${r[1]}${u}` : '';
-    const tile = (cls, label, val, st, sub) => `<div class="tile ${cls} ${st}"><b>${val}</b><span>${label}</span><small class="${st}">${esc(sub)}</small></div>`, miss = (st, r, u = '') => st === 'out' ? rng(r, u) : '';
-    const no = this._notes[b.id] || {};
-    return `<div class="hero"><div class="pillrow"><button class="icon" data-nav="1" aria-label="Älterer Bezug" ${pos >= n - 1 ? 'disabled' : ''}>${ic('left')}</button>
-      <button class="pilltoggle" data-menu aria-haspopup="listbox" aria-expanded="${this._menu}">${n - pos}/${n} · ${esc(disp(b).short)} ${esc(disp(b).time)} ${ic(this._menu ? 'up' : 'down')}</button>
-      <button class="icon" data-nav="-1" aria-label="Neuerer Bezug" ${pos <= 0 ? 'disabled' : ''}>${ic('right')}</button>
-      ${this._menu ? `<div class="menu" role="listbox" aria-label="Bezug auswählen">${this._menuRows(l)}</div>` : ''}</div>
-      <div class="tiles">${tile('r', 'Verhältnis (x)', b.ratio ? b.ratio.toFixed(1) : '--', s.ratio, miss(s.ratio, t.ratio) || (b.dose_g ? `${b.dose_g.toFixed(1)} g Mehl` : ''))}
-      ${tile('f', 'Fluss (g/s)', (pk || this._flow(b)).toFixed(1), s.flow, miss(s.flow, t.flow) || (pk ? `Ø ${this._flow(b).toFixed(1)}` : ''))}
-      ${tile('w', 'Gewicht (g)', b.yield_g.toFixed(1), s.yield, miss(s.yield, t.yield))}${tile('t', 'Zeit', m, s.time, miss(s.time, t.time, ' s'))}</div>
-      ${this._ok(b) ? `<div class="chip ok" style="margin:0 0 8px">${ic('check')} im Ziel</div>` : ''}${this._graph(b)}
-      <div class="notes"><div class="st">${[1, 2, 3, 4, 5].map(k => `<button data-s="${k}" class="${(no.stars || 0) >= k ? 'on' : ''}" aria-label="${k} Sterne">${ic('star')}</button>`).join('')}<button class="icon" data-notes aria-label="Notiz bearbeiten" aria-expanded="${this._nopen}">${ic('edit')}</button></div>
-      ${this._nopen ? `<input data-f="bean" placeholder="Bohne" aria-label="Bohne" value="${esc(no.bean)}"><textarea data-f="note" rows="2" placeholder="Notiz" aria-label="Notiz">${esc(no.note)}</textarea>` : (no.bean || no.note) ? `<div class="mut">${esc([no.bean, no.note].filter(Boolean).join(' · '))}</div>` : ''}</div></div>`;
+    const c = this._c, L = this._L, real = (b.curve || []).length >= 5, pk = real ? this._peak(b) : 0, m = `${Math.floor(b.time_s / 60)}:${String(b.time_s % 60).padStart(2, '0')}`;
+    const t = this._tg(b.mode), s = this._states(b), rng = (r, u = '') => r ? `${L.target} ${r[0]}–${r[1]}${u}` : '';
+    const tile = (cls, label, val, st, sub) => `<div class="tile ${cls} ${st}"><b>${val}</b><span>${esc(label)}</span><small class="${st}">${esc(sub)}</small></div>`, miss = (st, r, u = '') => st === 'out' ? rng(r, u) : '';
+    const no = this._notes[b.id] || {}, d = this._disp(b);
+    const fv = c.flow_value === 'avg' ? this._flow(b) : c.flow_value === 'peak' ? (pk || this._flow(b)) : (pk || this._flow(b)), showAvg = pk && c.flow_value !== 'avg';
+    const pill = `${n - pos}/${n} · ${esc(d.short)} ${esc(d.time)}`;
+    return `<div class="hero"><div class="pillrow"><button class="icon" data-nav="1" aria-label="${esc(L.older)}" ${pos >= n - 1 ? 'disabled' : ''}>${ic('left')}</button>
+      ${c.show_menu ? `<button class="pilltoggle" data-menu aria-haspopup="listbox" aria-expanded="${this._menu}">${pill} ${ic(this._menu ? 'up' : 'down')}</button>` : `<div class="pilltoggle static">${pill}</div>`}
+      <button class="icon" data-nav="-1" aria-label="${esc(L.newer)}" ${pos <= 0 ? 'disabled' : ''}>${ic('right')}</button>
+      ${this._menu ? `<div class="menu" role="listbox" aria-label="${esc(L.pick)}">${this._menuRows(l)}</div>` : ''}</div>
+      ${c.show_tiles ? `<div class="tiles">${tile('r', L.ratio, b.ratio ? b.ratio.toFixed(1) : '--', s.ratio, miss(s.ratio, t.ratio) || (b.dose_g ? `${b.dose_g.toFixed(1)} g ${L.dose}` : ''))}
+      ${tile('f', L.flow, fv.toFixed(1), s.flow, miss(s.flow, t.flow) || (showAvg ? `${L.avg} ${this._flow(b).toFixed(1)}` : ''))}
+      ${tile('w', L.weight, b.yield_g.toFixed(1), s.yield, miss(s.yield, t.yield))}${tile('t', L.time, m, s.time, miss(s.time, t.time, ' s'))}</div>
+      ${this._ok(b) ? `<div class="chip ok" style="margin:0 0 8px">${ic('check')} ${esc(L.inTarget)}</div>` : ''}` : ''}
+      ${c.show_graph ? this._graph(b) : ''}
+      ${c.show_stars || c.show_notes ? `<div class="notes"><div class="st">${c.show_stars ? [1, 2, 3, 4, 5].map(k => `<button data-s="${k}" class="${(no.stars || 0) >= k ? 'on' : ''}" aria-label="${k} ${esc(L.stars)}">${ic('star')}</button>`).join('') : ''}${c.show_notes ? `<button class="icon" data-notes aria-label="${esc(L.editNote)}" aria-expanded="${this._nopen}">${ic('edit')}</button>` : ''}</div>
+      ${this._nopen ? `<input data-f="bean" placeholder="${esc(L.bean)}" aria-label="${esc(L.bean)}" value="${esc(no.bean)}"><textarea data-f="note" rows="2" placeholder="${esc(L.note)}" aria-label="${esc(L.note)}">${esc(no.note)}</textarea>` : (no.bean || no.note) ? `<div class="mut">${esc([no.bean, no.note].filter(Boolean).join(' · '))}</div>` : ''}</div>` : ''}</div>`;
   }
   _menuRows(l) { // the logbook: every brew, grouped by day, with notes and stars
-    let day = '', h = '';
+    const L = this._L; let day = '', h = '';
     for (const b of l) {
-      const d = disp(b).date, no = this._notes[b.id] || {};
-      if (d !== day) { day = d; h += `<div class="day">${esc(d)}</div>`; }
-      h += `<div class="row ${b.id === this._selId ? 'sel' : ''}" tabindex="0" role="option" aria-selected="${b.id === this._selId}" data-pick="${esc(b.id)}"><div class="t ${this._ok(b) ? 'ok' : ''}"><span>${disp(b).short}<br>${disp(b).time}</span></div>
-        <div style="min-width:0"><b>${b.yield_g.toFixed(1)} g</b> in ${b.time_s} s · ${this._flow(b).toFixed(1)} g/s<small>${esc(no.bean || (b.mode === 'pourover' ? 'Filter' : 'Espresso'))}${no.note ? ' · ' + esc(no.note) : ''}</small></div>
+      const d = this._disp(b), no = this._notes[b.id] || {};
+      if (d.date !== day) { day = d.date; h += `<div class="day">${esc(d.date)}</div>`; }
+      h += `<div class="row ${b.id === this._selId ? 'sel' : ''}" tabindex="0" role="option" aria-selected="${b.id === this._selId}" data-pick="${esc(b.id)}"><div class="t ${this._ok(b) ? 'ok' : ''}"><span>${esc(d.short)}<br>${esc(d.time)}</span></div>
+        <div style="min-width:0"><b>${b.yield_g.toFixed(1)} g</b> in ${b.time_s} s · ${this._flow(b).toFixed(1)} g/s<small>${esc(no.bean || (b.mode === 'pourover' ? L.pourover : L.espresso))}${no.note ? ' · ' + esc(no.note) : ''}</small></div>
         <div class="r">${b.ratio ? '1:' + b.ratio.toFixed(1) : ''}<div class="stars">${'★'.repeat(no.stars || 0)}</div></div></div>`;
     }
     return h;
   }
   _draw() {
     const r = this.shadowRoot; if (!r) return;
-    const l = this._list(), selPos = Math.max(0, l.findIndex(b => b.id === this._sel)), sel = l[selPos]; this._selId = sel?.id;
+    const c = this._c, L = this._L, l = this._list(), selPos = Math.max(0, l.findIndex(b => b.id === this._sel)), sel = l[selPos]; this._selId = sel?.id;
     const keep = r.activeElement?.dataset?.f, v = keep && r.activeElement.value;
-    r.innerHTML = `<style>${CSS(this._c.accent || '#e8b54a')}</style><div class="card">
-      <header><div class="logo">${ic('cup')}</div><h2>${esc(this._c.title || 'Logbuch')}</h2>
-        <div class="seg">${[['all', 'Alle'], ['espresso', 'Espresso'], ['pourover', 'Filter']].map(([k, t]) => `<button data-m="${k}" class="${this._mode === k ? 'on' : ''}">${t}</button>`).join('')}</div></header>
-      ${sel ? this._hero(sel, selPos, l.length, l) + this._chart(l) : '<div class="empty">Noch keine Brühungen.</div>'}</div>`;
+    const header = c.show_title || c.show_filter ? `<header>${c.show_title ? `<div class="logo">${ic('cup')}</div><h2>${esc(c.title ?? L.title)}</h2>` : '<h2></h2>'}
+        ${c.show_filter ? `<div class="seg">${['all', 'espresso', 'pourover'].map(k => `<button data-m="${k}" class="${this._mode === k ? 'on' : ''}">${esc(L[k])}</button>`).join('')}</div>` : ''}</header>` : '';
+    r.innerHTML = `<style>${CSS}</style><div class="card">${header}
+      ${sel ? this._hero(sel, selPos, l.length, l) + (c.show_chart ? this._chart(l) : '') : `<div class="empty">${esc(L.empty)}</div>`}</div>`;
     if (keep) { const el = r.querySelector(`[data-f="${keep}"]`); if (el) { el.focus(); el.setSelectionRange?.(v.length, v.length); } }
   }
   getCardSize() { return 9; }
-  static getStubConfig() { return { entity: 'sensor.mavo_lumicurve_brews', targets: { espresso: { time: [22, 30], yield: [34, 42] }, pourover: { time: [150, 210], yield: [250, 310] } } }; }
+}
+
+// ---- visual editor (dashboard -> card -> edit): a ha-form; colours are stored as hex strings, ranges as targets.<type>.<metric> = [min, max]
+const HEX = /^#([0-9a-f]{6})$/i;
+const toRgb = h => { const m = HEX.exec(h || ''); return m ? [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16)) : undefined; };
+const toHex = a => '#' + a.map(n => Math.round(n).toString(16).padStart(2, '0')).join('');
+const COLORS = ['accent', 'color_ratio', 'color_flow', 'color_weight', 'color_time', 'color_in', 'color_out', 'color_pill', 'text_color', 'background', 'background_end'];
+const METRICS = [['time', 'time', 0, 900, 1], ['yield', 'yield', 0, 700, 0.1], ['flow', 'flow', 0, 30, 0.1], ['ratio', 'ratio', 0, 40, 0.1]];
+const sel = (o) => ({ select: { mode: 'dropdown', options: o } }), bool = { boolean: {} }, col = { color_rgb: {} };
+const EDITOR_SCHEMA = [
+  { name: 'entity', selector: { entity: { domain: 'sensor' } } },
+  { name: 'title', selector: { text: {} } },
+  { type: 'grid', name: '', schema: [
+    { name: 'language', selector: sel([{ value: 'de', label: 'Deutsch' }, { value: 'en', label: 'English' }]) },
+    { name: 'theme', selector: sel([{ value: 'dark', label: 'Dark (own colours)' }, { value: 'ha', label: 'Home Assistant theme' }]) }] },
+  { type: 'expandable', name: '', title: 'Colours', icon: 'mdi:palette', schema: COLORS.map(name => ({ name, selector: col })) },
+  { type: 'expandable', name: '', title: 'Show', icon: 'mdi:eye', schema: ['show_title', 'show_filter', 'show_tiles', 'show_graph', 'show_chart', 'show_stars', 'show_notes', 'show_menu'].map(name => ({ name, selector: bool })) },
+  { type: 'expandable', name: '', title: 'Behaviour and look', icon: 'mdi:tune', schema: [
+    { name: 'default_mode', selector: sel([{ value: 'all', label: 'All' }, { value: 'espresso', label: 'Espresso' }, { value: 'pourover', label: 'Filter' }]) },
+    { name: 'chart_metric', selector: sel([{ value: 'time', label: 'Time' }, { value: 'flow', label: 'Flow' }]) },
+    { name: 'flow_value', selector: sel([{ value: 'auto', label: 'Auto (peak if known, else average)' }, { value: 'avg', label: 'Average' }, { value: 'peak', label: 'Peak' }]) },
+    { name: 'chart_count', selector: { number: { min: 5, max: 100, mode: 'box' } } },
+    { name: 'border_radius', selector: { number: { min: 0, max: 40, mode: 'slider' } } },
+    { name: 'font_scale', selector: { number: { min: 70, max: 150, mode: 'slider', unit_of_measurement: '%' } } },
+    { name: 'show_invalid', selector: bool }] },
+  ...['espresso', 'pourover'].map(mode => ({ type: 'expandable', name: '', title: `Targets: ${mode === 'espresso' ? 'Espresso' : 'Filter'} (min / max, empty = no target)`, icon: 'mdi:target', schema: METRICS.flatMap(([m, , lo, hi, st]) => [
+    { type: 'grid', name: '', schema: [{ name: `${mode}_${m}_min`, selector: { number: { min: lo, max: hi, step: st, mode: 'box' } } }, { name: `${mode}_${m}_max`, selector: { number: { min: lo, max: hi, step: st, mode: 'box' } } }] }]) })),
+];
+const EDITOR_LABELS = {
+  entity: 'Entity with the brews (attribute "brews")', title: 'Title', language: 'Language', theme: 'Theme', accent: 'Accent', color_ratio: 'Ratio colour', color_flow: 'Flow colour', color_weight: 'Weight colour', color_time: 'Time colour',
+  color_in: 'On target colour', color_out: 'Off target colour', color_pill: 'Brew selector colour', text_color: 'Text', background: 'Background', background_end: 'Background (gradient end)',
+  show_title: 'Title', show_filter: 'Espresso/Filter buttons', show_tiles: 'Four tiles', show_graph: 'Weight graph', show_chart: 'History chart', show_stars: 'Stars', show_notes: 'Notes button', show_menu: 'Brew dropdown',
+  default_mode: 'Start filter', chart_metric: 'Chart shows', flow_value: 'Flow tile shows', chart_count: 'Bars in the chart', border_radius: 'Corner radius (px)', font_scale: 'Text size', show_invalid: 'Show tare/noise events',
+};
+class NofreeBrewCardEditor extends HTMLElement {
+  setConfig(c) { this._config = c || {}; this._render(); }
+  set hass(h) { this._hass = h; if (this._form) this._form.hass = h; }
+  _toData(c) {
+    const d = { ...DEF, ...c };
+    for (const k of COLORS) d[k] = toRgb(c[k]);
+    for (const mode of ['espresso', 'pourover']) for (const [m] of METRICS) { const r = c.targets?.[mode]?.[m]; d[`${mode}_${m}_min`] = r?.[0]; d[`${mode}_${m}_max`] = r?.[1]; }
+    return d;
+  }
+  _render() {
+    if (!this._form) {
+      this._form = document.createElement('ha-form');
+      this._form.addEventListener('value-changed', e => this._changed(e.detail.value));
+      this.appendChild(this._form);
+    }
+    this._data = this._toData(this._config);
+    Object.assign(this._form, { hass: this._hass, data: this._data, schema: EDITOR_SCHEMA, computeLabel: s => EDITOR_LABELS[s.name] || s.name.replace(/^(espresso|pourover)_/, '').replace('_', ' ') });
+  }
+  _changed(d) {
+    const cfg = { ...this._config };
+    for (const [k, v] of Object.entries(d)) {
+      if (/^(espresso|pourover)_/.test(k) || JSON.stringify(v) === JSON.stringify(this._data[k])) continue; // targets and unchanged values are handled below
+      if (COLORS.includes(k)) { if (Array.isArray(v)) cfg[k] = toHex(v); else delete cfg[k]; } else if (v === undefined || v === '' || v === DEF[k] && !(k in this._config)) delete cfg[k]; else cfg[k] = v;
+    }
+    for (const mode of ['espresso', 'pourover']) for (const [m] of METRICS) {
+      const a = d[`${mode}_${m}_min`], b = d[`${mode}_${m}_max`];
+      if (a === this._data[`${mode}_${m}_min`] && b === this._data[`${mode}_${m}_max`]) continue;
+      const t = cfg.targets = { ...cfg.targets }; t[mode] = { ...t[mode] };
+      if (a != null && b != null && a !== '' && b !== '') t[mode][m] = [+a, +b]; else delete t[mode][m];
+      if (!Object.keys(t[mode]).length) delete t[mode];
+      if (!Object.keys(t).length) delete cfg.targets;
+    }
+    this._config = cfg; this._data = this._toData(cfg);
+    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: cfg }, bubbles: true, composed: true }));
+  }
 }
 if (!customElements.get('nofree-brew-card')) customElements.define('nofree-brew-card', NofreeBrewCard);
-(window.customCards = window.customCards || []).push({ type: 'nofree-brew-card', name: 'Brew logbook (Mavo Lumicurve)', description: 'Last brew like on the scale, targets, flow graph, ratings and a brew dropdown.', preview: false });
+if (!customElements.get('nofree-brew-card-editor')) customElements.define('nofree-brew-card-editor', NofreeBrewCardEditor);
+(window.customCards = window.customCards || []).push({ type: 'nofree-brew-card', name: 'Brew logbook (Mavo Lumicurve)', description: 'Last brew like on the scale, targets, flow graph, ratings and a brew dropdown. Fully customizable.', preview: false });

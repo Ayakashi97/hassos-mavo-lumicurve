@@ -31,19 +31,9 @@ On macOS the terminal app needs Bluetooth permission. Only one program can be co
 (close other apps/browser tabs first). `tools/explorer.html` (Chrome, Web Bluetooth) lists services and logs raw bytes;
 `tools/watch.py` prints advertisement changes (the broadcast carries no weight).
 
-## Card options (`card/nofree-brew-card.js`)
+## Configuration
 
-| key | default | meaning |
-|---|---|---|
-| `entity` or `brews_url` | – | where the brews list comes from (`brews` attribute, or a JSON file) |
-| `title` | Logbuch | card title |
-| `accent` | `#e8b54a` | accent colour |
-| `chart_count` | 30 | bars in the time chart |
-| `targets` | – | targets per type: `{ espresso: { time:[min,max], yield:[..], flow:[..], ratio:[..] }, pourover: { … } }` (flow = average g/s) |
-| `target_time` / `target_yield` / `target_flow` / `target_ratio` | – | same ranges for both types (overridden by `targets`) |
-| `chart_metric` | `time` | history chart shows `time` or `flow` (also switchable in the card) |
-| `show_invalid` | false | also show tare/noise events (< 8 s or < 5 g) |
-
-Notes per brew (bean, text, stars) are stored in HA user data (`frontend/set_user_data`), `localStorage` as fallback.
+The card is fully customizable (colours, texts, language, parts, targets, HA theme variables, a visual editor). **Everything is listed in [docs/CONFIG.md](docs/CONFIG.md)**,
+including where each setting lives (card config, theme variables, `data/lumicurve.json`, `settings.json`).
 
 See [docs/PLAN.md](docs/PLAN.md) for the road to Home Assistant.

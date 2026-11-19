@@ -1,0 +1,7 @@
+{
+  "pourover_min_s": 90,
+  "min_time_s": 8,
+  "min_yield_g": 5,
+  "dose_g": [10, 20],
+  "sync_delay_s": 10
+}
