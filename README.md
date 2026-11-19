@@ -36,7 +36,7 @@ On macOS the terminal app needs Bluetooth permission. Only one program can be co
 | key | default | meaning |
 |---|---|---|
 | `entity` or `brews_url` | – | where the brews list comes from (`brews` attribute, or a JSON file) |
-| `title` | Espresso-Logbuch | card title |
+| `title` | Logbuch | card title |
 | `accent` | `#e8b54a` | accent colour |
 | `chart_count` | 30 | bars in the time chart |
 | `targets` | – | targets per type: `{ espresso: { time:[min,max], yield:[..], flow:[..], ratio:[..] }, pourover: { … } }` (flow = average g/s) |
