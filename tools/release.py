@@ -30,10 +30,10 @@ if not m or not re.search(r"^- ", m[1], re.M):
     sys.exit("CHANGELOG.md has no entries under [Unreleased]")
 today = datetime.date.today().isoformat()
 log = log.replace("## [Unreleased]\n", f"## [Unreleased]\n\n## [{ver}] - {today}\n", 1)
-log = re.sub(r"\[Unreleased\]: .*", f"[Unreleased]: {REPO}/compare/v{ver}...HEAD\n[{ver}]: {REPO}/compare/{prev}...v{ver}", log, 1)
+log = re.sub(r"\[Unreleased\]: .*", f"[Unreleased]: {REPO}/compare/v{ver}...HEAD\n[{ver}]: {REPO}/compare/{prev}...v{ver}", log, count=1)
 
 card = ROOT / "dist" / "mavo-lumicurve-card.js"
-card_new = re.sub(r"(mavo-lumicurve-card · v)\d+\.\d+\.\d+", rf"\g<1>{ver}", card.read_text(), 1)
+card_new = re.sub(r"(mavo-lumicurve-card · v)\d+\.\d+\.\d+", rf"\g<1>{ver}", card.read_text(), count=1)
 changes = {ROOT / "CHANGELOG.md": log, card: card_new}
 for doc in ("README.md", "docs/INSTALL-HA.md"):
     p = ROOT / doc
@@ -41,7 +41,8 @@ for doc in ("README.md", "docs/INSTALL-HA.md"):
 
 print(f"release v{ver} (previous {prev}), date {today}")
 if dry:
-    sys.exit("dry run: nothing written")
+    print("dry run: nothing written")
+    sys.exit(0)
 for p, text in changes.items():
     p.write_text(text)
 sh("python3", "tests/test_parse.py")
