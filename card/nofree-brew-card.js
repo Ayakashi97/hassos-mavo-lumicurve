@@ -52,17 +52,20 @@ button:focus-visible,.row:focus-visible{outline:2px solid var(--a);outline-offse
 button.icon{min-width:40px;padding:0}button:disabled{opacity:.35;cursor:default}
 .tiles{display:grid;grid-template-columns:1fr 1fr;border-radius:16px;margin-bottom:10px}
 .tile{padding:12px 6px 10px;text-align:center}.tile.r,.tile.f{border-bottom:1px solid rgba(255,255,255,.25)}.tile.r,.tile.w{border-right:1px solid rgba(255,255,255,.25)}
-.tile b{display:block;font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.1}.tile span{font-size:12px}.tile small{display:block;font-size:11px;color:var(--mut)}
+.tile b{display:block;font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.1}.tile span{font-size:12px}.tile small{display:block;font-size:11px;color:var(--mut);min-height:14px}
 .tile.r span{color:#f0883e}.tile.f span{color:#6fd26b}.tile.w span{color:#9b8cff}.tile.t span{color:#e266a8}
 .graph svg{width:100%;display:block}.graph text{fill:var(--mut);font-size:9px}.graph .cap{fill:#9b8cff;font-size:10px}
 .graph .gr{stroke:rgba(255,255,255,.25);stroke-width:1;stroke-dasharray:2 3}.graph .area{fill:var(--a);opacity:.1}.graph .end{stroke:rgba(255,255,255,.55);stroke-width:1;stroke-dasharray:3 3}
 .graph .mk{fill:#fff}.graph .wl{fill:none;stroke:var(--a);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.graph .wl.dash{stroke-dasharray:5 4;opacity:.85}.graph .wd{fill:var(--a)}.graph .note{font-size:11px;color:var(--mut)}
-.row.sel{background:color-mix(in srgb,var(--a) 14%,transparent)}
+.row.sel{background:color-mix(in srgb,var(--a) 16%,transparent)}
+.pilltoggle{min-height:40px;padding:5px 14px;border-radius:999px;background:color-mix(in srgb,var(--a) 20%,#7a5cff 20%);font-size:12px;font-weight:600;white-space:nowrap;border:1px solid rgba(255,255,255,.2)}
+.pillrow{position:relative}
+.menu{position:absolute;z-index:5;left:0;right:0;top:46px;max-height:340px;overflow:auto;padding:6px;border-radius:18px;background:linear-gradient(160deg,rgba(60,48,34,.96),rgba(30,24,17,.97));border:1px solid rgba(255,255,255,.2);box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.2);backdrop-filter:blur(18px) saturate(1.25)}
+.tile small.in{color:#7fdc8a}.tile small.out{color:#f0a06a}.tile.in b{color:#fff}
+.notes{margin:10px 0 4px;display:grid;gap:8px}
 .curve{margin:0 0 12px}.edit .curve{margin:0}.curve svg{width:100%;display:block}.curve text{fill:var(--mut);font-size:9px}
 .curve .wl{fill:none;stroke:var(--a);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.curve .wl.dash{stroke-dasharray:5 4;opacity:.7}
 .curve .wd{fill:var(--a)}.curve .fb{fill:var(--a);opacity:.28}.curve .ax{stroke:rgba(255,255,255,.2);stroke-width:1}.curve .note{font-size:11px;color:var(--mut)}
-.more{width:100%;margin-top:8px}
-.older{max-height:380px;overflow:auto;margin-top:4px;border-radius:14px}
 .day{margin:12px 0 2px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
 .edit{padding:12px;margin:2px 0 8px;border-radius:14px;background:rgba(0,0,0,.22);display:grid;gap:8px}
 input,textarea{font:inherit;color:inherit;padding:9px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07)}
@@ -75,25 +78,32 @@ input:focus-visible,textarea:focus-visible{outline:2px solid var(--a);outline-of
 
 class NofreeBrewCard extends HTMLElement {
   setConfig(c) {
-    this._c = { chart_count: 30, recent: 5, show_invalid: false, ring_max: 45, chart_metric: 'time', ...c };
-    this._mode = 'all'; this._open = null; this._all = false; this._sel = null; this._brews = null;
+    // targets: { espresso: {time:[min,max], yield:[..], flow:[..], ratio:[..]}, pourover: {...} }; flat target_time/yield/flow/ratio apply to both modes
+    this._c = { chart_count: 30, chart_metric: 'time', show_invalid: false, targets: {}, ...c };
+    this._mode = 'all'; this._sel = null; this._menu = false; this._brews = null;
     if (!this.shadowRoot) { const r = this.attachShadow({ mode: 'open' }); this._wire(r); }
     this._notes = this._load(); this._fetch();
   }
   _wire(r) { // ShadowRoot has no onclick property, so use listeners (registered once)
     r.addEventListener('click', e => {
-      const t = e.target.closest('[data-nav],[data-m],[data-c],[data-s],[data-more],.row'); if (!t || t.disabled) return;
-      if (t.dataset.nav) { const l = this._list(), i = Math.max(0, l.findIndex(b => b.id === this._selId)) + +t.dataset.nav; this._sel = l[Math.min(Math.max(i, 0), l.length - 1)]?.id; this._open = null; }
+      const t = e.target.closest('[data-nav],[data-menu],[data-pick],[data-m],[data-c],[data-s]');
+      if (!t) { if (this._menu && !e.target.closest('.menu')) { this._menu = false; this._draw(); } return; }
+      if (t.disabled) return;
+      if (t.dataset.nav) { const l = this._list(), i = Math.max(0, l.findIndex(b => b.id === this._selId)) + +t.dataset.nav; this._sel = l[Math.min(Math.max(i, 0), l.length - 1)]?.id; }
+      else if ('menu' in t.dataset) this._menu = !this._menu;
+      else if (t.dataset.pick) { this._sel = t.dataset.pick; this._menu = false; }
       else if (t.dataset.c) this._c.chart_metric = t.dataset.c;
-      else if (t.dataset.m) { this._mode = t.dataset.m; this._open = null; this._sel = null; }
-      else if ('more' in t.dataset) this._all = !this._all;
-      else if (t.dataset.s) { const o = this._notes[this._open] ||= {}; o.stars = o.stars === +t.dataset.s ? 0 : +t.dataset.s; this._save(); }
-      else if (this._selId === t.dataset.id) this._open = this._open === t.dataset.id ? null : t.dataset.id; // second tap on the shown brew = notes
-      else { this._sel = t.dataset.id; this._open = null; scrollTo?.(0, 0); }
+      else if (t.dataset.m) { this._mode = t.dataset.m; this._sel = null; this._menu = false; }
+      else if (t.dataset.s) { const o = this._notes[this._selId] ||= {}; o.stars = o.stars === +t.dataset.s ? 0 : +t.dataset.s; this._save(); }
       this._draw();
+      if (this._menu) { const s = this.shadowRoot.querySelector('.menu .sel'); s?.scrollIntoView({ block: 'center' }); s?.focus(); }
     });
-    r.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.classList.contains('row')) e.target.click(); });
-    r.addEventListener('change', e => { const f = e.target.dataset.f; if (f && this._open) { (this._notes[this._open] ||= {})[f] = e.target.value; this._save(); this._draw(); } });
+    r.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && this._menu) { this._menu = false; this._draw(); this.shadowRoot.querySelector('[data-menu]')?.focus(); }
+      else if (e.key === 'Enter' && e.target.dataset?.pick) e.target.click();
+      else if (this._menu && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); const it = [...this.shadowRoot.querySelectorAll('.menu .row')], i = it.indexOf(this.shadowRoot.activeElement); it[Math.min(Math.max(i + (e.key === 'ArrowDown' ? 1 : -1), 0), it.length - 1)]?.focus(); }
+    });
+    r.addEventListener('change', e => { const f = e.target.dataset.f; if (f && this._selId) { (this._notes[this._selId] ||= {})[f] = e.target.value; this._save(); this._draw(); } });
   }
   set hass(h) { this._h = h; if (this._c?.entity) { const b = h.states[this._c.entity]?.attributes?.brews; if (b !== this._src) { this._src = b; this._brews = b || []; this._draw(); } } }
   async _fetch() { if (!this._c.brews_url) return; try { this._brews = await (await fetch(this._c.brews_url)).json(); } catch { this._brews = []; } this._draw(); }
@@ -102,21 +112,24 @@ class NofreeBrewCard extends HTMLElement {
     try { localStorage.setItem(KEY, JSON.stringify(this._notes)); } catch {}
     try { await this._h?.callWS({ type: 'frontend/set_user_data', key: KEY, value: this._notes }); } catch {}
   }
-  _list() { // newest first; ts is the scale's clock, only good for ordering
+  _list() { // newest first; file order of the scale log = chronological
     return (this._brews || []).map((b, i) => ({ ...b, id: b.ts + '|' + b.time_s + '|' + b.yield_g, i }))
       .filter(b => (this._c.show_invalid || b.valid !== false) && (this._mode === 'all' || b.mode === this._mode))
-      .sort((a, b) => (b.seq ?? b.i) - (a.seq ?? a.i)); // file order of the scale log = chronological
+      .sort((a, b) => (b.seq ?? b.i) - (a.seq ?? a.i));
   }
   _flow(b) { return b.flow_gs ?? (b.time_s ? b.yield_g / b.time_s : 0); }
-  _in(v, r) { return !r || (v >= r[0] && v <= r[1]); }
-  _ok(b) { const k = this._c; return (k.target_time || k.target_yield || k.target_flow) && this._in(b.time_s, k.target_time) && this._in(b.yield_g, k.target_yield) && this._in(this._flow(b), k.target_flow); }
+  _tg(mode) { const k = this._c; return { time: k.target_time, yield: k.target_yield, flow: k.target_flow, ratio: k.target_ratio, ...(k.targets?.[mode] || {}) }; }
+  _st(v, r) { return !r || v == null ? '' : v >= r[0] && v <= r[1] ? 'in' : 'out'; } // 'in' | 'out' | '' (no target)
+  _states(b) { const t = this._tg(b.mode); return { time: this._st(b.time_s, t.time), yield: this._st(b.yield_g, t.yield), flow: this._st(this._flow(b), t.flow), ratio: this._st(b.ratio, t.ratio) }; }
+  _ok(b) { const s = Object.values(this._states(b)); return s.includes('in') && !s.includes('out'); }
   _chart(list) {
-    const fl = this._c.chart_metric === 'flow', val = b => fl ? this._flow(b) : b.time_s, tt = fl ? this._c.target_flow : this._c.target_time;
-    const d = list.filter(b => this._mode === 'pourover' || b.mode === 'espresso').slice(0, this._c.chart_count).reverse(); /* long pours would flatten the espresso bars */
-    const max = Math.max(fl ? 1 : 10, ...d.map(val), tt ? tt[1] : 0), w = 300 / Math.max(d.length, 1), y = v => 72 - 66 * v / max;
-    return `<div class="chart"><div class="lab" style="display:flex;justify-content:space-between;align-items:center">${fl ? 'Durchfluss' : 'Bezugszeit'} · letzte ${d.length}<span class="seg">${[['time', 'Zeit'], ['flow', 'Fluss']].map(([k, t]) => `<button data-c="${k}" class="${(fl ? 'flow' : 'time') === k ? 'on' : ''}" style="min-height:32px;padding:0 10px">${t}</button>`).join('')}</span></div><svg viewBox="0 0 300 76" role="img" aria-label="${fl ? 'Durchfluss' : 'Bezugszeit'} der letzten ${d.length} Brühungen">
+    const fl = this._c.chart_metric === 'flow', val = b => fl ? this._flow(b) : b.time_s, mode = this._mode === 'pourover' ? 'pourover' : 'espresso', tt = this._tg(mode)[fl ? 'flow' : 'time'];
+    const d = list.filter(b => b.mode === mode).slice(0, this._c.chart_count).reverse(); /* long pours would flatten the espresso bars */
+    if (!d.length) return '';
+    const max = Math.max(fl ? 1 : 10, ...d.map(val), tt ? tt[1] : 0), w = 300 / d.length, y = v => 72 - 66 * v / max;
+    return `<div class="chart"><div class="lab" style="display:flex;justify-content:space-between;align-items:center">${fl ? 'Durchfluss' : 'Bezugszeit'} · letzte ${d.length}${mode === 'pourover' ? ' Filter' : ''}<span class="seg">${[['time', 'Zeit'], ['flow', 'Fluss']].map(([k, t]) => `<button data-c="${k}" class="${(fl ? 'flow' : 'time') === k ? 'on' : ''}" style="min-height:32px;padding:0 10px">${t}</button>`).join('')}</span></div><svg viewBox="0 0 300 76" role="img" aria-label="${fl ? 'Durchfluss' : 'Bezugszeit'} der letzten ${d.length} Brühungen">
       ${tt ? `<rect class="band" x="0" y="${y(tt[1])}" width="300" height="${y(tt[0]) - y(tt[1])}" rx="3"/>` : ''}
-      ${d.map((b, i) => `<rect class="b ${this._in(val(b), tt) ? '' : 'out'}" x="${i * w + 1}" y="${y(val(b))}" width="${Math.max(w - 2, 1)}" height="${72 - y(val(b))}" rx="2"/>`).join('')}</svg></div>`;
+      ${d.map((b, i) => `<rect class="b ${this._st(val(b), tt) === 'out' ? 'out' : ''}" x="${i * w + 1}" y="${y(val(b))}" width="${Math.max(w - 2, 1)}" height="${72 - y(val(b))}" rx="2"/>`).join('')}</svg></div>`;
   }
   _nice(v) { return [20, 40, 70, 100, 140, 200, 280, 400, 600].find(s => s >= v) || Math.ceil(v / 100) * 100; }
   _peak(b) { // peak flow between samples that are >= 3 s apart (same idea as the scale's number, to be confirmed)
@@ -140,37 +153,42 @@ class NofreeBrewCard extends HTMLElement {
       <text x="150" y="146" text-anchor="middle" class="cap">Gewichtsverlauf</text></svg>
       ${real ? '' : '<div class="note">Für diesen Bezug hat die Waage keine Zwischenwerte im Log – Linie ist geschätzt.</div>'}</div>`;
   }
-  _hero(b, pos, n) {
+  _hero(b, pos, n, l) {
     const real = (b.curve || []).length >= 5, pk = real ? this._peak(b) : 0, m = `${Math.floor(b.time_s / 60)}:${String(b.time_s % 60).padStart(2, '0')}`;
-    const tile = (cls, label, val, sub = '') => `<div class="tile ${cls}"><b>${val}</b><span>${label}</span>${sub ? `<small>${sub}</small>` : ''}</div>`;
+    const t = this._tg(b.mode), s = this._states(b), rng = (r, u = '') => r ? `Ziel ${r[0]}–${r[1]}${u}` : '';
+    const tile = (cls, label, val, st, sub) => `<div class="tile ${cls} ${st}"><b>${val}</b><span>${label}</span><small class="${st}">${esc(sub)}</small></div>`;
+    const no = this._notes[b.id] || {};
     return `<div class="hero"><div class="pillrow"><button class="icon" data-nav="1" aria-label="Älterer Bezug" ${pos >= n - 1 ? 'disabled' : ''}>${ic('left')}</button>
-      <div class="pill">Bezug ${n - pos}/${n} · ${esc(disp(b).full)}</div><button class="icon" data-nav="-1" aria-label="Neuerer Bezug" ${pos <= 0 ? 'disabled' : ''}>${ic('right')}</button></div>
-      <div class="tiles">${tile('r', 'Verhältnis (x)', b.ratio ? b.ratio.toFixed(1) : '--')}${tile('f', 'Fluss (g/s)', (pk || this._flow(b)).toFixed(1), pk ? `Ø ${this._flow(b).toFixed(1)}` : 'Ø')}
-      ${tile('w', 'Gewicht (g)', b.yield_g.toFixed(1), b.dose_g ? `${b.dose_g.toFixed(1)} g Mehl` : '')}${tile('t', 'Zeit', m)}</div>
-      ${this._ok(b) ? `<div class="chip ok" style="margin:0 0 8px">${ic('check')} im Ziel</div>` : ''}${this._graph(b)}</div>`;
+      <button class="pilltoggle" data-menu aria-haspopup="listbox" aria-expanded="${this._menu}">Bezug ${n - pos}/${n} · ${esc(disp(b).full)} · ${b.mode === 'pourover' ? 'Filter' : 'Espresso'} ${ic(this._menu ? 'up' : 'down')}</button>
+      <button class="icon" data-nav="-1" aria-label="Neuerer Bezug" ${pos <= 0 ? 'disabled' : ''}>${ic('right')}</button>
+      ${this._menu ? `<div class="menu" role="listbox" aria-label="Bezug auswählen">${this._menuRows(l)}</div>` : ''}</div>
+      <div class="tiles">${tile('r', 'Verhältnis (x)', b.ratio ? b.ratio.toFixed(1) : '--', s.ratio, rng(t.ratio) || (b.dose_g ? `${b.dose_g.toFixed(1)} g Mehl` : ''))}
+      ${tile('f', 'Fluss (g/s)', (pk || this._flow(b)).toFixed(1), s.flow, pk ? `Ø ${this._flow(b).toFixed(1)} · ${rng(t.flow)}` : `Ø · ${rng(t.flow)}`.replace(/ · $/, ''))}
+      ${tile('w', 'Gewicht (g)', b.yield_g.toFixed(1), s.yield, rng(t.yield))}${tile('t', 'Zeit', m, s.time, rng(t.time, ' s'))}</div>
+      ${this._ok(b) ? `<div class="chip ok" style="margin:0 0 8px">${ic('check')} im Ziel</div>` : ''}${this._graph(b)}
+      <div class="notes"><input data-f="bean" placeholder="Bohne" aria-label="Bohne" value="${esc(no.bean)}"><textarea data-f="note" rows="2" placeholder="Notiz" aria-label="Notiz">${esc(no.note)}</textarea>
+      <div class="st">${[1, 2, 3, 4, 5].map(k => `<button data-s="${k}" class="${(no.stars || 0) >= k ? 'on' : ''}" aria-label="${k} Sterne">${ic('star')}</button>`).join('')}</div></div></div>`;
   }
-  _row(b) {
-    const no = this._notes[b.id] || {}, ok = this._ok(b), tmax = this._c.ring_max;
-    let h = `<div class="row ${b.id === this._selId ? 'sel' : ''}" tabindex="0" role="button" data-id="${esc(b.id)}"><div class="t ${ok ? 'ok' : ''}"><span>${disp(b).short}<br>${disp(b).time}</span></div>
-      <div style="min-width:0"><b>${b.yield_g.toFixed(1)} g</b> in ${b.time_s} s · ${this._flow(b).toFixed(1)} g/s<small>${esc(no.bean || (b.mode === 'pourover' ? 'Filter' : 'Espresso'))}${no.note ? ' · ' + esc(no.note) : ''}</small>
-      <div class="bar"><i style="width:${Math.min(100, 100 * b.time_s / (b.mode === 'pourover' ? 240 : tmax))}%"></i></div></div>
-      <div class="r">${b.ratio ? '1:' + b.ratio.toFixed(1) : ''}<div class="stars">${'★'.repeat(no.stars || 0)}</div></div></div>`;
-    if (this._open === b.id) h += `<div class="edit"><div class="note" style="font-size:11px;color:var(--mut)">${esc(disp(b).full)}${b.real_ts ? ':' + esc(b.real_ts.slice(17)) : ''}</div><input data-f="bean" placeholder="Bohne" aria-label="Bohne" value="${esc(no.bean)}">
-      <textarea data-f="note" rows="2" placeholder="Notiz" aria-label="Notiz">${esc(no.note)}</textarea>
-      <div class="st">${[1, 2, 3, 4, 5].map(s => `<button data-s="${s}" class="${(no.stars || 0) >= s ? 'on' : ''}" aria-label="${s} Sterne">${ic('star')}</button>`).join('')}</div></div>`;
+  _menuRows(l) { // the logbook: every brew, grouped by day, with notes and stars
+    let day = '', h = '';
+    for (const b of l) {
+      const d = disp(b).date, no = this._notes[b.id] || {};
+      if (d !== day) { day = d; h += `<div class="day">${esc(d)}</div>`; }
+      h += `<div class="row ${b.id === this._selId ? 'sel' : ''}" tabindex="0" role="option" aria-selected="${b.id === this._selId}" data-pick="${esc(b.id)}"><div class="t ${this._ok(b) ? 'ok' : ''}"><span>${disp(b).short}<br>${disp(b).time}</span></div>
+        <div style="min-width:0"><b>${b.yield_g.toFixed(1)} g</b> in ${b.time_s} s · ${this._flow(b).toFixed(1)} g/s<small>${esc(no.bean || (b.mode === 'pourover' ? 'Filter' : 'Espresso'))}${no.note ? ' · ' + esc(no.note) : ''}</small></div>
+        <div class="r">${b.ratio ? '1:' + b.ratio.toFixed(1) : ''}<div class="stars">${'★'.repeat(no.stars || 0)}</div></div></div>`;
+    }
     return h;
   }
   _draw() {
     const r = this.shadowRoot; if (!r) return;
-    const l = this._list(), selPos = Math.max(0, l.findIndex(b => b.id === this._sel)), sel = l[selPos], n = this._c.recent, selId = (this._selId = sel?.id), recent = l.slice(0, n), older = l.slice(n);
-    let day = '', old = '';
-    for (const b of older) { const d = disp(b).date; if (d !== day) { day = d; old += `<div class="day">${esc(d)}</div>`; } old += this._row(b); }
+    const l = this._list(), selPos = Math.max(0, l.findIndex(b => b.id === this._sel)), sel = l[selPos]; this._selId = sel?.id;
+    const keep = r.activeElement?.dataset?.f, v = keep && r.activeElement.value;
     r.innerHTML = `<style>${CSS(this._c.accent || '#e8b54a')}</style><div class="card">
       <header><div class="logo">${ic('cup')}</div><h2>${esc(this._c.title || 'Espresso-Logbuch')}<small>${l.length} Brühungen</small></h2>
         <div class="seg">${[['all', 'Alle'], ['espresso', 'Espresso'], ['pourover', 'Filter']].map(([k, t]) => `<button data-m="${k}" class="${this._mode === k ? 'on' : ''}">${t}</button>`).join('')}</div></header>
-      ${l[0] ? this._hero(sel, selPos, l.length) + this._chart(l) : ''}
-      ${l.length ? `<div class="lab" style="margin-left:10px">Letzte ${Math.min(n, l.length)}</div>${recent.map(b => this._row(b)).join('')}` : '<div class="empty">Noch keine Brühungen.</div>'}
-      ${older.length ? `<button class="more" data-more aria-expanded="${this._all}">${ic(this._all ? 'up' : 'down')}${this._all ? 'Weniger anzeigen' : `Alle ${l.length} anzeigen`}</button>${this._all ? `<div class="older">${old}</div>` : ''}` : ''}</div>`;
+      ${sel ? this._hero(sel, selPos, l.length, l) + this._chart(l) : '<div class="empty">Noch keine Brühungen.</div>'}</div>`;
+    if (keep) { const el = r.querySelector(`[data-f="${keep}"]`); if (el) { el.focus(); el.setSelectionRange?.(v.length, v.length); } }
   }
   getCardSize() { return 9; }
 }

@@ -11,8 +11,10 @@ Example on the scale: Ratio `--`, Flow 13.6 g/s, Weight 109.1 g, Time 0:11.
    Ratio shows `--` when no dose was weighed (same as the scale). Time as `m:ss`.
 3. **Weight graph** like the scale: `(g)` axis with nice maximum (20/40/70/100/140/200…), `(s)` axis with 4 s ticks
    (10 s / 30 s for long pours), dotted grid, end marker ▼ with a dashed line, subtle area under the line.
-4. **History strip** below: time chart (or flow chart), then the list "Letzte 5" with "Alle N anzeigen".
-   Tapping a row shows it in the big display; tapping the shown row again opens notes (bean, text, stars).
+4. **Brew dropdown** = the logbook: the pill is a button that opens a glass list of all brews, grouped by day, with
+   yield, time, flow, bean/note and stars; arrow keys + Enter, Esc closes, the selected brew is centred. The old
+   "Letzte 5" list is gone (arrows on top zap through the brews).
+   Bean, note and stars of the shown brew sit under the graph. History chart (time or flow) below.
 5. Glass look, icon buttons, 40 px targets, German text (see the dashboard's STYLEGUIDE).
 
 ## Data we still need (decisions / experiments)
@@ -34,3 +36,9 @@ language (de/en), which tiles to show, graph y-max, units (g/oz).
 3. Experiments after the next sync: record download command, match the flow number, check record numbering.
 4. Home Assistant side (see PLAN.md): auto-discovery, sync on advertisement, sensors, JSON/history storage.
 5. Polish: swipe left/right for brews, visual config editor, dark/light.
+
+## Targets per type (implemented)
+`targets.espresso` and `targets.pourover` each take `time`, `yield`, `flow` (average g/s) and `ratio` as `[min, max]`.
+Each tile shows its range ("Ziel 22–30 s"), turns green inside and orange outside; "im Ziel" appears when every defined
+target is met. The history chart draws the band for the current type. The values in `card/test.html` are placeholders
+(espresso 34–42 g in 22–30 s, ratio 1.8–2.5; filter 250–310 g in 150–210 s, ratio 15–17): replace them with your own.
