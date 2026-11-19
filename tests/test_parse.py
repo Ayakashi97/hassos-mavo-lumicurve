@@ -7,6 +7,7 @@ class T(unittest.TestCase):
         b = parse(open(os.path.join(os.path.dirname(__file__), "fixture.txt")).read())
         self.assertEqual(len(b), 1)
         self.assertEqual((b[0]["yield_g"], b[0]["time_s"], b[0]["mode"], b[0]["valid"]), (34.0, 21, "espresso", True))
+        self.assertEqual(b[0]["flow_gs"], 1.62)  # 34.0 g / 21 s
         self.assertTrue(b[0]["ts"].startswith("2022-03-04"))
 
     def test_negative_and_noise(self):  # negative weights never count; short shots are flagged invalid

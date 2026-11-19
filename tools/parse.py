@@ -48,6 +48,7 @@ def parse(text):
                     "valid": secs >= 8 and last_lock >= 50,
                     "yield_g": last_lock / 10,
                     "time_s": secs,
+                    "flow_gs": round(last_lock / 10 / secs, 2),  # average flow, g/s (~ml/s)
                     "dose_g": dose / 10 if dose else None,
                     "ratio": round(last_lock / dose, 2) if dose else None,
                 })

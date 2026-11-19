@@ -26,3 +26,7 @@ Discovery, log sync, parser (+tests), card prototype with logbook, options, note
 ## Fallback without a custom integration
 Cron/launchd on any machine with Bluetooth near the scale runs `sync.py` + `parse.py` and POSTs the result
 to an HA webhook or writes `/config/www/mavo_brews.json`.
+
+## Flow rate
+Average flow = yield ÷ time (g/s, ≈ ml/s) is in `brews.json` (`flow_gs`) and the card (hero chip, rows, chart toggle, `target_flow`).
+A real flow *curve* might be possible later: the log has `[SW] restart=` / `lock=` samples during a shot, but they are sparse and not yet decoded.

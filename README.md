@@ -38,6 +38,9 @@ On macOS the terminal app needs Bluetooth permission. Only one program can be co
 | `accent` | `#e8b54a` | accent colour |
 | `chart_count` | 30 | bars in the time chart |
 | `target_time` / `target_yield` | – | `[min, max]`; shots inside get a ✓, others fade in the chart |
+| `target_flow` | – | `[min, max]` average flow in g/s (yield ÷ time) |
+| `chart_metric` | `time` | chart shows `time` or `flow` (also switchable in the card) |
+| `recent` | 5 | rows shown before "show all" |
 | `show_invalid` | false | also show tare/noise events (< 8 s or < 5 g) |
 
 Notes per brew (bean, text, stars) are stored in HA user data (`frontend/set_user_data`), `localStorage` as fallback.
