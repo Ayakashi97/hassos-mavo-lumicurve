@@ -5,6 +5,9 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Added
+- Integration icon (a coffee cup) in `custom_components/mavo_lumicurve/brand/`; Home Assistant shows it in Settings → Devices & Services. Source: `tools/icon.svg`.
+
 ## [0.9.4] - 2026-11-20
 
 ### Changed
