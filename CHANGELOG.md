@@ -5,6 +5,9 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Changed
+- First stable release: Home Assistant syncs the scale over its own Bluetooth, keeps the full brew history (with raw logs and history import), and the card shows it with logbook, graph, targets and ratings.
+
 ## [0.9.6] - 2026-11-20
 
 ### Fixed
