@@ -4,9 +4,9 @@
     "step": {
       "user": {
         "title": "Mavo Lumicurve",
-        "description": "Waage wählen (vorher aufwecken, damit sie erscheint).",
+        "description": "Bluetooth-Adresse der Waage eingeben (AA:BB:CC:DD:EE:FF; steht im Log der Waage als \"Mac\"). Leer lassen, um zuerst die Karte mit Beispieldaten zu installieren.",
         "data": {
-          "address": "Waage"
+          "address": "Adresse der Waage"
         }
       },
       "no_scale": {
@@ -20,6 +20,9 @@
     "abort": {
       "no_devices_found": "Keine Waage gefunden. Aufwecken und prüfen, ob ein Bluetooth-Adapter oder Proxy in Reichweite ist.",
       "already_configured": "Bereits eingerichtet."
+    },
+    "error": {
+      "invalid_address": "Das ist keine Bluetooth-Adresse (AA:BB:CC:DD:EE:FF)."
     }
   },
   "options": {

@@ -1,6 +1,7 @@
 """Config flow: Bluetooth discovery, manual pick, and an options form for all settings."""
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -39,15 +40,21 @@ class MavoConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(step_id="confirm", description_placeholders={"name": self._info.name})
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        current = self._async_current_ids()
-        found = {i.address: i for i in async_discovered_service_info(self.hass, False) if i.address not in current and _is_scale(i)}
+        """Address of the scale; empty = no scale yet. Typed, because a passive scan has no name and so cannot recognise the scale."""
+        errors: dict[str, str] = {}
         if user_input is not None:
-            self._info = found[user_input["address"]]
-            await self.async_set_unique_id(self._info.address)
-            return await self.async_step_confirm()
-        if not found:
-            return await self.async_step_no_scale()
-        return self.async_show_form(step_id="user", data_schema=vol.Schema({vol.Required("address"): vol.In({a: f"{i.name} ({a})" for a, i in found.items()})}))
+            addr = (user_input.get("address") or "").strip().upper()
+            if not addr:
+                return await self.async_step_no_scale()
+            if not re.fullmatch(r"([0-9A-F]{2}:){5}[0-9A-F]{2}", addr):
+                errors["address"] = "invalid_address"
+            else:
+                await self.async_set_unique_id(addr)
+                self._abort_if_unique_id_configured()
+                return self.async_create_entry(title=f"Mavo Lumicurve ({addr})", data={"address": addr})
+        current = self._async_current_ids()
+        found = [i.address for i in async_discovered_service_info(self.hass, False) if i.address not in current and _is_scale(i)]
+        return self.async_show_form(step_id="user", errors=errors, data_schema=vol.Schema({vol.Optional("address", default=found[0] if found else ""): str}))
 
     async def async_step_no_scale(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """No scale in range: offer an entry without a scale, so the card is installed and shows example data until one is added."""

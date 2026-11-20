@@ -5,6 +5,9 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Changed
+- Adding the integration asks for the scale's Bluetooth address (pre-filled when the scale is recognised). A passive Bluetooth scan has no device name, so the scale was not discovered automatically. Empty address still installs the card with example data.
+
 ## [0.9.2] - 2026-11-19
 
 ### Changed

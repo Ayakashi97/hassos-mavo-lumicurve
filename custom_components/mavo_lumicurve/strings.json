@@ -4,9 +4,9 @@
     "step": {
       "user": {
         "title": "Mavo Lumicurve",
-        "description": "Choose the scale (wake it first so it shows up).",
+        "description": "Enter the Bluetooth address of the scale (AA:BB:CC:DD:EE:FF; it is printed in the scale's log as \"Mac\"). Leave empty to install the card with example data first.",
         "data": {
-          "address": "Scale"
+          "address": "Scale address"
         }
       },
       "no_scale": {
@@ -20,6 +20,9 @@
     "abort": {
       "no_devices_found": "No scale found. Wake it and make sure a Bluetooth adapter or proxy is in range.",
       "already_configured": "Already set up."
+    },
+    "error": {
+      "invalid_address": "That is not a Bluetooth address (AA:BB:CC:DD:EE:FF)."
     }
   },
   "options": {
