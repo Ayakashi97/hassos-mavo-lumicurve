@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-11-20
+
 ### Changed
 - Adding the integration asks for the scale's Bluetooth address (pre-filled when the scale is recognised). A passive Bluetooth scan has no device name, so the scale was not discovered automatically. Empty address still installs the card with example data.
 
@@ -101,7 +103,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.3...HEAD
+[0.9.3]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.8.3...v0.9.0
