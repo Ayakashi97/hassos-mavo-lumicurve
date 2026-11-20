@@ -1,0 +1,6 @@
+import_brews:
+  fields:
+    brews:
+      required: true
+      selector:
+        object:

@@ -4,10 +4,11 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+import voluptuous as vol
 from homeassistant.components import frontend
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType
 
 from .const import CARD_URL, DOMAIN
@@ -49,6 +50,13 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     if not await _register_resource(hass, url):  # YAML-mode dashboards: load the card on every page instead
         frontend.add_extra_js_url(hass, url)
     async_register(hass)
+
+    async def import_brews(call: ServiceCall) -> None:
+        for e in hass.config_entries.async_entries(DOMAIN):
+            if getattr(e, "runtime_data", None) is not None:
+                _LOGGER.info("Imported %d brews", await e.runtime_data.async_import(call.data["brews"]))
+
+    hass.services.async_register(DOMAIN, "import_brews", import_brews, vol.Schema({vol.Required("brews"): [dict]}))
     return True
 
 

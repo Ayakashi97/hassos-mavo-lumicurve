@@ -41,9 +41,9 @@ Other sources (`entity`, `brews_url`, inline `brews`) still work. All options, c
 ## The scale (what we found)
 
 - BLE, no pairing. Name `MAVO LUMICURVE`, service `fff0` (`fff1`/`fff2` write+notify, `fff3` indicate).
-- It does **not** stream live weight. It keeps an on-board debug log (~500 KB ring buffer) you can pull: write `01 01 01` to `fff2`, it announces the size
+- It does **not** stream live weight. It keeps an on-board debug log (~500 KB) you can pull: write `01 01 01` to `fff2`, it announces the size
   (`01 09 01` + 8 bytes), acknowledge with `01 09 02` + the same 8 bytes, the log arrives as notifications on `fff2`.
-  Protocol notes: [Beanconqueror#1198](https://github.com/graphefruit/Beanconqueror/issues/1198). Reading does not clear the log.
+  Protocol notes: [Beanconqueror#1198](https://github.com/graphefruit/Beanconqueror/issues/1198). Reading ERASES the log on the scale (each read returns only what is new), so the integration keeps every brew and the raw logs in Home Assistant.
 - The scale has no real clock: after every cold boot it restarts at 2022-02-02 02:30. The log ends with the sync's own BLE connection, so the parser computes
   real times for the latest run (`real_ts`); older runs show as "earlier".
 - A brew ends at `[MP] weight num N time T`; its yield is the last settled `[SW] lock=A-B-C` before it (B = 0.1 g).

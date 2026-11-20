@@ -6,6 +6,10 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ## [Unreleased]
 
 ### Added
+- The raw log of every sync is saved (`.storage/mavo_lumicurve.<entry>.raw`, newest 2 MB) before it is parsed, because reading erases the log on the scale.
+- Service `mavo_lumicurve.import_brews` adds brews that were read elsewhere (e.g. with the Mac tools) in front of the stored history; duplicates are skipped.
+
+### Added
 - Integration icon (a coffee cup) in `custom_components/mavo_lumicurve/brand/`; Home Assistant shows it in Settings → Devices & Services. Source: `tools/icon.svg`.
 
 ## [0.9.4] - 2026-11-20

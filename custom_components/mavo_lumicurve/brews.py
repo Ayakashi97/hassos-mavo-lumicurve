@@ -61,6 +61,12 @@ def merge(stored: list[dict], parsed: list[dict], now_iso: str) -> tuple[list[di
     return merged, added
 
 
+def import_history(stored: list[dict], old: list[dict], now_iso: str) -> tuple[list[dict], list[dict]]:
+    """Add brews that were read earlier elsewhere (e.g. with the Mac tools) in front of the stored ones; duplicates are skipped."""
+    _, added = merge(stored, old, now_iso)
+    return added + stored, added
+
+
 def derive(b: dict, s: dict) -> dict:
     """Add the values that depend on the settings: type, noise flag, average flow, ratio."""
     t, y = b["time_s"], b["yield_g"]

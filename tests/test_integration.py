@@ -43,6 +43,14 @@ class T(unittest.TestCase):
         self.assertEqual((len(again), added), (len(stored), []))
         self.assertEqual([b["real_ts"] for b in again], [b["real_ts"] for b in stored])  # first sync wins
 
+    def test_import_history_goes_first_and_skips_duplicates(self):
+        mk = lambda ts, y, t: {"ts": ts, "real_ts": None, "yield_g": y, "time_s": t, "dose_g": None}
+        stored, _ = brews.merge([], [mk("2026-11-20 09:00:00", 40.0, 21)], "n")
+        merged, added = brews.import_history(stored, [mk("2022-03-01 20:08:39", 36.0, 18), mk("2026-11-20 09:00:00", 40.0, 21)], "n")
+        self.assertEqual([b["yield_g"] for b in merged], [36.0, 40.0])
+        self.assertEqual(len(added), 1)
+        self.assertEqual(len({b["id"] for b in merged}), 2)
+
     def test_derive_and_settings_roundtrip(self):
         s = brews.settings_from_options({"pourover_min_s": 60, "espresso_time_min": 22, "espresso_time_max": 30})
         self.assertEqual(s["targets"]["espresso"]["time"], [22, 30])

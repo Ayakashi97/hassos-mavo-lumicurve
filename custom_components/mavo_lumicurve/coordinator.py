@@ -17,7 +17,7 @@ from homeassistant.util import dt as dt_util
 
 from . import brews as brewlib
 from . import parser
-from .const import DOMAIN, EVENT_SYNCED, STORE_VERSION
+from .const import DOMAIN, EVENT_SYNCED, RAW_KEEP_CHARS, STORE_VERSION
 from .protocol import BATTERY_CHAR, LogDownloadError, download_log
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,6 +30,7 @@ class MavoCoordinator:
         self.hass, self.entry = hass, entry
         self.address: str = entry.unique_id or entry.data["address"]
         self.store: Store = Store(hass, STORE_VERSION, f"{DOMAIN}.{entry.entry_id}")
+        self.raw_store: Store = Store(hass, STORE_VERSION, f"{DOMAIN}.{entry.entry_id}.raw")
         self.brews: list[dict] = []
         self.notes: dict[str, dict] = {}
         self.last_sync: datetime | None = None
@@ -104,6 +105,7 @@ class MavoCoordinator:
             text = await download_log(client)
         finally:
             await client.disconnect()
+        await self._keep_raw(text, synced_at)  # reading erases the log on the scale: keep the text before anything can go wrong
         parsed = await self.hass.async_add_executor_job(parser.parse, text, synced_at, self.settings)
         self.brews, added = brewlib.merge(self.brews, parsed, dt_util.utcnow().isoformat())
         brewlib.prune_curves(self.brews, self.settings)
@@ -113,6 +115,23 @@ class MavoCoordinator:
         _LOGGER.debug("Log starts %r ... ends %r", text[:300], text[-300:])
         if added:
             self.hass.bus.async_fire(EVENT_SYNCED, {"entry_id": self.entry.entry_id, "new": len(added)})
+
+    async def _keep_raw(self, text: str, synced_at: datetime) -> None:
+        """Keep the latest raw logs (at most RAW_KEEP_CHARS), so a parser fix can re-read them."""
+        logs = (await self.raw_store.async_load() or {}).get("logs", [])
+        logs.append({"synced_at": synced_at.isoformat(), "text": text})
+        while len(logs) > 1 and sum(len(x["text"]) for x in logs) > RAW_KEEP_CHARS:
+            logs.pop(0)
+        await self.raw_store.async_save({"logs": logs})
+
+    async def async_import(self, old: list[dict]) -> int:
+        """Add brews read elsewhere (service mavo_lumicurve.import_brews). Returns how many were new."""
+        self.brews, added = brewlib.import_history(self.brews, old, dt_util.utcnow().isoformat())
+        brewlib.prune_curves(self.brews, self.settings)
+        await self._save()
+        self.hass.bus.async_fire(EVENT_SYNCED, {"entry_id": self.entry.entry_id, "new": len(added)})
+        self._notify()
+        return len(added)
 
     async def _save(self) -> None:
         await self.store.async_save({"brews": self.brews, "notes": self.notes, "last_sync": self.last_sync.isoformat() if self.last_sync else None})
