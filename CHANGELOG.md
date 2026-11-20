@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-20
+
 ### Changed
 - The visual editor shows the colours that are in use (the built-in defaults) instead of black while nothing is set; only a colour you change is stored.
 - The entity field of the editor says it is optional: empty means the Mavo Lumicurve integration is the source.
@@ -131,7 +133,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.6...v1.0.0
 [0.9.6]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.4...v0.9.5
