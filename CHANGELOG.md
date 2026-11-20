@@ -5,6 +5,10 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Changed
+- The visual editor shows the colours that are in use (the built-in defaults) instead of black while nothing is set; only a colour you change is stored.
+- The entity field of the editor says it is optional: empty means the Mavo Lumicurve integration is the source.
+
 ## [1.0.0] - 2026-11-20
 
 ### Changed

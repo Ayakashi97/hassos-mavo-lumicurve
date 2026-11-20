@@ -244,6 +244,7 @@ class MavoLumicurveCard extends HTMLElement {
 const HEX = /^#([0-9a-f]{6})$/i;
 const toRgb = h => { const m = HEX.exec(h || ''); return m ? [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16)) : undefined; };
 const toHex = a => '#' + a.map(n => Math.round(n).toString(16).padStart(2, '0')).join('');
+const COLOR_DEFAULTS = { accent: '#e8b54a', color_ratio: '#f0883e', color_flow: '#6fd26b', color_weight: '#9b8cff', color_time: '#e266a8', color_in: '#7fdc8a', color_out: '#f0a06a', color_pill: '#735b5c', text_color: '#f4efe6', background: '#4a3d2c', background_end: '#2a2217' }; // what the picker shows while nothing is set
 const COLORS = ['accent', 'color_ratio', 'color_flow', 'color_weight', 'color_time', 'color_in', 'color_out', 'color_pill', 'text_color', 'background', 'background_end'];
 const METRICS = [['time', 'time', 0, 900, 1], ['yield', 'yield', 0, 700, 0.1], ['flow', 'flow', 0, 30, 0.1], ['ratio', 'ratio', 0, 40, 0.1]];
 const sel = (o) => ({ select: { mode: 'dropdown', options: o } }), bool = { boolean: {} }, col = { color_rgb: {} };
@@ -267,7 +268,7 @@ const EDITOR_SCHEMA = [
     { type: 'grid', name: '', schema: [{ name: `${mode}_${m}_min`, selector: { number: { min: lo, max: hi, step: st, mode: 'box' } } }, { name: `${mode}_${m}_max`, selector: { number: { min: lo, max: hi, step: st, mode: 'box' } } }] }]) })),
 ];
 const EDITOR_LABELS = {
-  entity: 'Entity with the brews (attribute "brews")', title: 'Title', language: 'Language', theme: 'Theme', accent: 'Accent', color_ratio: 'Ratio colour', color_flow: 'Flow colour', color_weight: 'Weight colour', color_time: 'Time colour',
+  entity: 'Other source (optional): entity with the attribute "brews". Empty = Mavo Lumicurve integration', title: 'Title', language: 'Language', theme: 'Theme', accent: 'Accent', color_ratio: 'Ratio colour', color_flow: 'Flow colour', color_weight: 'Weight colour', color_time: 'Time colour',
   color_in: 'On target colour', color_out: 'Off target colour', color_pill: 'Brew selector colour', text_color: 'Text', background: 'Background', background_end: 'Background (gradient end)',
   show_title: 'Title', show_filter: 'Espresso/Filter buttons', show_tiles: 'Four tiles', show_graph: 'Weight graph', show_chart: 'History chart', show_stars: 'Stars', show_notes: 'Notes button', show_menu: 'Brew dropdown',
   default_mode: 'Start filter', chart_metric: 'Chart shows', flow_value: 'Flow tile shows', chart_count: 'Bars in the chart', border_radius: 'Corner radius (px)', font_scale: 'Text size', show_invalid: 'Show tare/noise events',
@@ -277,7 +278,7 @@ class MavoLumicurveCardEditor extends HTMLElement {
   set hass(h) { this._hass = h; if (this._form) this._form.hass = h; }
   _toData(c) {
     const d = { ...DEF, ...c };
-    for (const k of COLORS) d[k] = toRgb(c[k]);
+    for (const k of COLORS) d[k] = toRgb(c[k]) || toRgb(COLOR_DEFAULTS[k]);
     for (const mode of ['espresso', 'pourover']) for (const [m] of METRICS) { const r = c.targets?.[mode]?.[m]; d[`${mode}_${m}_min`] = r?.[0]; d[`${mode}_${m}_max`] = r?.[1]; }
     return d;
   }
