@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-20
+
 ### Changed
 - First stable release: Home Assistant syncs the scale over its own Bluetooth, keeps the full brew history (with raw logs and history import), and the card shows it with logbook, graph, targets and ratings.
 
@@ -125,7 +127,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.6...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.6...v1.0.0
 [0.9.6]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.3...v0.9.4
