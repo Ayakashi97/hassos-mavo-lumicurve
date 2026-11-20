@@ -5,6 +5,9 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Changed
+- The sync log line shows how much log text arrived; debug logging also shows its start and end (to diagnose a download that yields no brews).
+
 ## [0.9.3] - 2026-11-20
 
 ### Changed

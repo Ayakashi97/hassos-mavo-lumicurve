@@ -109,7 +109,8 @@ class MavoCoordinator:
         brewlib.prune_curves(self.brews, self.settings)
         self.last_sync = dt_util.utcnow()
         await self._save()
-        _LOGGER.info("Synced %s: %d log brews, %d new", self.address, len(parsed), len(added))
+        _LOGGER.info("Synced %s: %d chars of log, %d log brews, %d new", self.address, len(text), len(parsed), len(added))
+        _LOGGER.debug("Log starts %r ... ends %r", text[:300], text[-300:])
         if added:
             self.hass.bus.async_fire(EVENT_SYNCED, {"entry_id": self.entry.entry_id, "new": len(added)})
 
