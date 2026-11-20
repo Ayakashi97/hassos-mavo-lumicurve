@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-11-20
+
 ### Changed
 - The sync log line shows how much log text arrived; debug logging also shows its start and end (to diagnose a download that yields no brews).
 
@@ -106,7 +108,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.3...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.0...v0.9.1
