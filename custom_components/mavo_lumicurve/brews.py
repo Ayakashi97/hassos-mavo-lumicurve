@@ -88,8 +88,9 @@ def prune_curves(brews: list[dict], s: dict) -> None:
 def public(brews: list[dict], s: dict, notes: dict) -> list[dict]:
     """What the card receives: derived values plus ratings, bean and note of every brew."""
     out = []
-    for b in brews:
+    for i, b in enumerate(brews):
         d = derive(b, s)
+        d["seq"] = i  # the card sorts by seq; the list is oldest first (imported history sits in front), stored seq is only an id counter
         n = notes.get(b["id"], {})
         d["stars"], d["bean"], d["note"] = n.get("stars", 0), n.get("bean", ""), n.get("note", "")
         out.append(d)

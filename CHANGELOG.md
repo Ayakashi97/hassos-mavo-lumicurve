@@ -5,6 +5,9 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Fixed
+- The newest brew is on top again after importing history: the card now gets its order from the list (oldest first), not from the stored counter.
+
 ## [0.9.5] - 2026-11-20
 
 ### Added

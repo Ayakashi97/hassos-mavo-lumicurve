@@ -51,6 +51,14 @@ class T(unittest.TestCase):
         self.assertEqual(len(added), 1)
         self.assertEqual(len({b["id"] for b in merged}), 2)
 
+    def test_public_seq_follows_list_order(self):
+        mk = lambda ts, y: {"ts": ts, "real_ts": None, "yield_g": y, "time_s": 20, "dose_g": None}
+        stored, _ = brews.merge([], [mk("a", 40.0)], "n")
+        merged, _ = brews.import_history(stored, [mk("b", 36.0)], "n")
+        out = brews.public(merged, brews.DEFAULT_SETTINGS, {})
+        self.assertEqual([b["yield_g"] for b in out], [36.0, 40.0])
+        self.assertEqual([b["seq"] for b in out], [0, 1])
+
     def test_derive_and_settings_roundtrip(self):
         s = brews.settings_from_options({"pourover_min_s": 60, "espresso_time_min": 22, "espresso_time_max": 30})
         self.assertEqual(s["targets"]["espresso"]["time"], [22, 30])
