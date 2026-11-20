@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-11-20
+
 ### Fixed
 - The newest brew is on top again after importing history: the card now gets its order from the list (oldest first), not from the stored counter.
 
@@ -120,7 +122,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.5...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.6...HEAD
+[0.9.6]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.2...v0.9.3
