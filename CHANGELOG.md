@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-11-20
+
 ### Added
 - The raw log of every sync is saved (`.storage/mavo_lumicurve.<entry>.raw`, newest 2 MB) before it is parsed, because reading erases the log on the scale.
 - Service `mavo_lumicurve.import_brews` adds brews that were read elsewhere (e.g. with the Mac tools) in front of the stored history; duplicates are skipped.
@@ -115,7 +117,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.4...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.5...HEAD
+[0.9.5]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.1...v0.9.2
