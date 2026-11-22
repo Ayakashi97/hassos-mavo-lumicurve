@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-11-22
+
 ### Added
 - Every brew now has a time and a source `ts_src`: `exact` (anchored to the sync through the scale's clock), `latest` (upper bound for brews from before a cold boot) or `seen` (the moment the brew was first seen; upper bound). The card shows "≤" before the time of the last two and a tooltip, and never "earlier" any more. Sensor attribute `brewed_src`.
 - One-time migration at startup: the kept raw logs are read again with the new parser, brews that still have no time get the moment they were added (`seen`).
@@ -166,7 +168,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.3...HEAD
+[1.1.3]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.0.1...v1.1.0
