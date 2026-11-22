@@ -5,6 +5,16 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Added
+- Option `surface: card | none`: `none` removes the card's own panel, border and padding so a dashboard dialog can provide the glass.
+- Option `layout: auto | compact | wide`: graph and history chart side by side from 720 px width (`auto`), always (`wide`) or never (`compact`). The four tiles form one row from 560 px.
+- Theme `auto` (the new default) and the tokens `--mlc-muted`, `--mlc-sheet`, `--mlc-display`; `auto` also reads the host tokens `--gold`, `--paper` and `--muted`. Both options and the theme are in the visual editor.
+
+### Changed
+- New look: tiles, brew list and header as small glass cards, segmented filter, the brew selector pill in neutral glass instead of purple, tile colours reduced to a small dot, values in the text colour (accent inside a target, orange outside).
+- Weight graph: solid 2 px line, soft fill, fixed-size axis labels, capped height; history chart: slim rounded bars, numbers only on the selected, highest and lowest bar; 24 px stars and a ghost pencil on one row; the brew list is a solid sheet under the pill.
+- **Breaking (looks only):** the default `theme` is now `auto`. To keep the old brown look set `theme: dark`; `theme: ha` is unchanged. `--mlc-bg`/`--mlc-bg2` now default to a navy gradient unless `theme: dark`.
+
 ## [1.0.1] - 2026-11-20
 
 ### Changed

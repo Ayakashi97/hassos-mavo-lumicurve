@@ -22,10 +22,11 @@ Details, what you should see and troubleshooting: **[docs/INSTALL-HA.md](docs/IN
 
 ## The card
 
-- Four tiles (ratio, flow, weight, time) in the scale's colours, targets per espresso and filter (green inside, orange outside).
+- Four tiles (ratio, flow, weight, time; one row on wide cards), targets per espresso and filter (accent inside, orange outside).
+- Glass look that fits a dark dashboard; `surface: none` drops the card's own panel for use inside a dialog, `layout` puts graph and chart side by side.
 - Weight graph with axes, end marker and, for pour-overs, the real curve. Espresso curves are estimated (the scale logs too few samples).
 - Brew selector: arrows and a dropdown with every brew (the logbook), stars and notes per brew.
-- History chart for time or flow, with the numbers on the bars; tap a bar to select it.
+- History chart for time or flow, number on the selected, highest and lowest bar; tap a bar to select it.
 - German and English; works on phones and light themes.
 
 ### Install

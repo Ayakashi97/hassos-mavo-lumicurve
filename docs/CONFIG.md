@@ -43,15 +43,22 @@ All keys are optional except one data source. A key set in the card config alway
 
 | key | default | used for |
 |---|---|---|
-| `theme` | `dark` | `dark` = own colours below, `ha` = text and background come from the HA theme (works on light themes) |
+| `theme` | `auto` | `auto` = the glass look (dark; every colour from `--mlc-*`, then host tokens `--gold`, `--paper`, `--muted`, then built-in), `dark` = the classic look of 1.0.x (brown gradient, own colours below), `ha` = text and background come from the HA theme (use it on light themes). See section 3a |
 | `accent` | `#e8b54a` | graph line, bars, selected items, stars, active buttons |
-| `color_ratio` / `color_flow` / `color_weight` / `color_time` | orange / green / purple / pink | labels of the four tiles (like the scale's screen) |
-| `color_in` / `color_out` | `#7fdc8a` / `#f0a06a` | value inside / outside its target; target band in the chart |
-| `color_pill` | accent mixed with purple | brew selector pill |
-| `text_color` | `#f4efe6` | text (only with `theme: dark`) |
-| `background`, `background_end` | `#4a3d2c`, `#2a2217` | gradient of the card (only with `theme: dark`); set only `background` for a flat colour |
+| `color_ratio` / `color_flow` / `color_weight` / `color_time` | orange / green / purple / pink | the small dot of each tile (like the scale's screen) |
+| `color_in` / `color_out` | light accent (`auto`) or `#7fdc8a` / `#f0a06a` | tile value inside / outside its target; target band in the chart |
+| `color_pill` | neutral glass (`dark`: accent mixed with purple) | brew selector pill; set it only if you want a coloured pill |
+| `text_color` | `#f4efe6` | text (not with `theme: ha`) |
+| `background`, `background_end` | `#1f2a3f`, `#141b2b` (`dark`: `#4a3d2c`, `#2a2217`) | gradient of the panel (not with `theme: ha`, not with `surface: none`); set only `background` for a flat colour |
 | `border_radius` | `20` | corner radius in px |
 | `font_scale` | `100` | percent; scales text and the big tile numbers |
+
+**Surface and layout** (new in 1.1.0)
+
+| key | default | meaning |
+|---|---|---|
+| `surface` | `card` | `card` = the card has its own panel (gradient, border, shadow, padding). `none` = no panel at all, so a host (a glass dialog, a dashboard card) provides the surface; the tiles and the brew list stay small glass cards |
+| `layout` | `auto` | `auto` = graph and history chart side by side (about 60 / 40) when the card is at least 720 px wide, stacked below that. `compact` = always stacked, `wide` = always side by side. The four tiles are one row from 560 px, 2 x 2 below, independent of `layout` |
 
 **Parts to show** (all `true` by default)
 
@@ -90,7 +97,10 @@ For every colour there is a CSS variable. Priority: **card config > theme variab
 | `--mlc-ratio`, `--mlc-flow`, `--mlc-weight`, `--mlc-time` | the four tile colours |
 | `--mlc-in`, `--mlc-out` | `color_in`, `color_out` |
 | `--mlc-pill` | `color_pill` |
-| `--mlc-text`, `--mlc-bg`, `--mlc-bg2` | `text_color`, `background`, `background_end` (theme `dark` only) |
+| `--mlc-text`, `--mlc-bg`, `--mlc-bg2` | `text_color`, `background`, `background_end` (not with `theme: ha`) |
+| `--mlc-muted` | secondary text (labels, captions, axis numbers); no config key |
+| `--mlc-sheet` | solid colour of the brew dropdown; no config key. The dropdown is never see-through |
+| `--mlc-display` | font family of the big tile numbers (a serif or display font); default: the card font |
 
 ```yaml
 # HA theme (frontend: themes:) – all brew cards change together
@@ -107,6 +117,15 @@ card_mod:
     :host { --mlc-accent: hotpink; }
 ```
 
+## 3a. Theme, surface, layout and host tokens
+
+`theme` picks the colour family, `surface` whether the card draws its own panel, `layout` how the charts are arranged. They are independent.
+
+- **`theme: auto` (default since 1.1.0)**: dark glass look. For each colour the card takes the first that exists: card option, `--mlc-*`, then (accent, text, muted only) the generic host tokens `--gold`, `--paper`, `--muted` that a dashboard may define, then a built-in dark default. It never reads Home Assistant's light/dark colours, so on a light dashboard use `theme: ha`.
+- **`theme: dark`**: the 1.0.x look with its brown gradient and `--mlc-*` colours (host tokens are ignored). Structure, tiles and charts are the new ones; only the colours are the old ones. Nothing to change if you set `theme: dark` explicitly.
+- **`theme: ha`**: text, panel and dropdown colours from Home Assistant (`--primary-text-color`, `--ha-card-background`, `--card-background-color`).
+- Embedding in a glass dashboard: `surface: none` and set `--gold`, `--paper`, `--muted` (or `--mlc-accent`, `--mlc-text`, `--mlc-muted`) on the dashboard. Optional: `--mlc-sheet` for the dropdown colour and `--mlc-display` for a display font.
+
 ## 4. Text keys for `labels`
 
 `title all espresso pourover ratio flow weight time target inTarget older newer pick bean note editNote stars chartTime chartFlow last btnTime btnFlow earlier earlierDate earlierFull estimated empty dose pickHint graphAria avg`
@@ -114,7 +133,7 @@ card_mod:
 
 ## 5. The visual editor
 
-Dashboard → edit → card → pencil. It has Colours, Show, Behaviour and look, and Targets for both types (min/max; empty = no target).
+Dashboard → edit → card → pencil. It has Theme, Surface and Layout, Colours, Show, Behaviour and look, and Targets for both types (min/max; empty = no target).
 It writes the same keys as YAML (colours as `#rrggbb`). Not in the editor, use YAML: `labels`, `brews_url`, `brews`, flat `target_*`.
 The editor needs the Home Assistant frontend (it uses `ha-form`), so it can only be tried inside HA, not on the local test page.
 
