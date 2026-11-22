@@ -48,7 +48,7 @@ def curve(samples, end, secs, final):
 def parse(text: str, synced_at: datetime | None = None, rules: dict | None = None) -> list[dict]:
     """Return the brews of one log, oldest first. `synced_at` is the real (naive local or UTC, caller's choice) time of the connection."""
     r = {**DEFAULT_RULES, **(rules or {})}
-    brews, run, base, day_off, prev_tod, end_sdt = [], 0, None, 0, 0, None
+    brews, run, base, day_off, prev_tod, end_sdt, end_ela = [], 0, None, 0, 0, None, 0
     locks, last_lock, samples = [], None, []  # samples: (time of day in s, grams) of every weight line
     for raw in text.splitlines():
         m = LINE.match(raw)
@@ -66,6 +66,7 @@ def parse(text: str, synced_at: datetime | None = None, rules: dict | None = Non
         prev_tod = tod
         sdt = base + timedelta(days=day_off, seconds=tod) if base else None
         end_sdt = sdt or end_sdt
+        end_ela = day_off * 86400 + tod  # seconds on the scale's clock within this run (works without a date)
         if tag == "SYS":
             if "wakeup" in msg:
                 locks, last_lock, samples = [], None, []
@@ -92,6 +93,7 @@ def parse(text: str, synced_at: datetime | None = None, rules: dict | None = Non
                     "run": run,
                     "ts": sdt.strftime("%Y-%m-%d %H:%M:%S") if sdt else f"? {h:02d}:{mi:02d}:{s:02d}",
                     "_sdt": sdt,
+                    "_ela": day_off * 86400 + tod,
                     "real_ts": None,
                     "mode": "pourover" if secs >= r["pourover_min_s"] else "espresso",
                     "valid": secs >= r["min_time_s"] and last_lock >= r["min_yield_g"] * 10,
@@ -108,6 +110,10 @@ def parse(text: str, synced_at: datetime | None = None, rules: dict | None = Non
         for b in brews:
             if b["run"] == run and b["_sdt"]:
                 b["real_ts"] = (b["_sdt"] + off).strftime("%Y-%m-%d %H:%M:%S")
+    if synced_at:  # last run without a date line in the log (ts shows "?"): the time of day still gives the distance to the sync
+        for b in brews:
+            if b["run"] == run and not b["_sdt"]:
+                b["real_ts"] = (synced_at - timedelta(seconds=end_ela - b["_ela"])).strftime("%Y-%m-%d %H:%M:%S")
     for b in brews:
-        del b["_sdt"]
+        del b["_sdt"], b["_ela"]
     return brews

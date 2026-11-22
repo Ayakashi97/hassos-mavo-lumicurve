@@ -27,5 +27,12 @@ class T(unittest.TestCase):
         t = "[ 1: 0: 0]D [SW] lock=4000-2000-0,1-1-0\n[ 1: 0: 1]I [MP] weight num 5 time 180\n"
         self.assertEqual(parse(t)[0]["mode"], "pourover")
 
+    def test_real_ts_without_date_line(self):  # no "Date:" line in the log (ts shows "?"): distance to the sync still gives the real time
+        from datetime import datetime
+        t = "[ 1: 0: 0]D [SW] lock=4000-2000-0,1-1-0\n[ 1: 0:30]I [MP] weight num 5 time 30\n[ 1:10: 0]I [BLE] connected\n"
+        b = parse(t, synced_at=datetime(2026, 11, 22, 12, 0, 0))[0]
+        self.assertTrue(b["ts"].startswith("?"))
+        self.assertEqual(b["real_ts"], "2026-11-22 11:50:30")
+
 if __name__ == "__main__":
     unittest.main()
