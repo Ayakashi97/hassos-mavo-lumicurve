@@ -5,6 +5,9 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Fixed
+- The brews of the latest sync get their real time even when the scale's log has no date line (the pill showed "earlier" instead of the time).
+
 ## [1.1.1] - 2026-11-22
 
 ### Changed
