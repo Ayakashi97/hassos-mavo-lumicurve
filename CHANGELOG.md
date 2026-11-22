@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-11-22
+
 ### Fixed
 - The brews of the latest sync get their real time even when the scale's log has no date line (the pill showed "earlier" instead of the time).
 
@@ -153,7 +155,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.0.0...v1.0.1
