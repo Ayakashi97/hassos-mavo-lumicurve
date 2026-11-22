@@ -30,8 +30,8 @@ function demoBrews() { // example brews for the empty state and `demo: true`: a 
 }
 const DEF = { language: 'de', theme: 'auto', surface: 'card', layout: 'auto', chart_count: 30, chart_metric: 'time', default_mode: 'all', flow_value: 'auto', show_invalid: false, border_radius: 20, font_scale: 100,
   show_title: true, show_filter: true, show_tiles: true, show_graph: true, show_chart: true, show_stars: true, show_notes: true, show_menu: true, targets: {} };
-const VARS = { // config key -> [css variable, theme variable name, built-in default]; accent, in, pill depend on `theme` (see _applyVars)
-  color_ratio: ['--c-r', 'ratio', '#f0883e'], color_flow: ['--c-f', 'flow', '#6fd26b'], color_weight: ['--c-w', 'weight', '#9b8cff'], color_time: ['--c-t', 'time', '#e266a8'], color_out: ['--out', 'out', '#f0a06a'],
+const VARS = { // config key -> [css variable, theme variable name, built-in default]; accent, in, pill depend on `theme` (see _applyVars) // entries: [css variable, theme variable name, default for dark panels, darker default for theme ha]
+  color_ratio: ['--c-r', 'ratio', '#f59a57', '#d9701f'], color_flow: ['--c-f', 'flow', '#7ddb79', '#2f9e44'], color_weight: ['--c-w', 'weight', '#a99cff', '#6b5ce0'], color_time: ['--c-t', 'time', '#ec7ab5', '#c2377f'], color_out: ['--out', 'out', '#f0a06a'],
 };
 const when = (ts, en) => { // "2026-11-19 13:53:56" -> parts; null when unknown
   const m = /^(\d{4})-(\d\d)-(\d\d) (\d\d:\d\d)(:\d\d)?/.exec(ts || ''); if (!m) return null;
@@ -66,8 +66,8 @@ header h2{margin:0;font-size:1.07em;font-weight:600;font-variant-caps:all-small-
 .dot{width:6px;height:6px;border-radius:50%;background:var(--dc);flex:none}
 .tile.r{--dc:var(--c-r)}.tile.f{--dc:var(--c-f)}.tile.w{--dc:var(--c-w)}.tile.t{--dc:var(--c-t)}
 .tile b{display:block;margin:6px 0 2px;font-family:var(--mlc-display,inherit);font-size:2.143em;font-weight:600;letter-spacing:-.01em;line-height:1.1;font-variant-numeric:tabular-nums}
-.tile.in b{color:var(--in)}.tile.out b{color:var(--out)}
-.tile small{display:block;min-height:1.3em;font-size:.893em;color:var(--mut)}
+.tile b{color:var(--dc)}
+.tile small{display:flex;align-items:center;gap:4px;min-height:1.3em;font-size:.893em;color:var(--mut)}.tile small.in{color:var(--in)}.tile small.out{color:var(--out)}
 .chip{display:inline-flex;align-items:center;gap:4px;margin-top:10px;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--in) 18%,transparent);color:var(--in);font-size:.86em}.chip .ic,.ic.ok{width:14px;height:14px}
 .sec{margin-top:16px;padding-top:14px;border-top:1px solid var(--bd);min-width:0}
 .split{display:grid;gap:0 24px}
@@ -121,7 +121,7 @@ class MavoLumicurveCard extends HTMLElement {
   _applyVars() { // explicit config wins; otherwise the theme variable --mlc-<name>; otherwise the host token (theme auto only) or the built-in default
     const c = this._c, ha = c.theme === 'ha', auto = c.theme === 'auto', set = (k, v) => this.style.setProperty(k, v);
     const pick = (key, name, def) => (c[key] !== undefined && c[key] !== '' ? c[key] : `var(--mlc-${name}, ${def})`);
-    for (const [key, [v, name, def]] of Object.entries(VARS)) set(v, pick(key, name, def));
+    for (const [key, [v, name, def, haDef]] of Object.entries(VARS)) set(v, pick(key, name, ha && haDef || def));
     set('--a', pick('accent', 'accent', auto ? 'var(--gold, #e8b54a)' : '#e8b54a'));
     set('--in', pick('color_in', 'in', auto ? 'color-mix(in srgb, var(--a) 72%, #fff)' : '#7fdc8a'));
     set('--pill', pick('color_pill', 'pill', ha || auto ? 'var(--s1)' : 'color-mix(in srgb,var(--a) 20%,#7a5cff 20%)'));
@@ -233,10 +233,10 @@ class MavoLumicurveCard extends HTMLElement {
   _tiles(b) {
     const c = this._c, L = this._L, real = (b.curve || []).length >= 5, pk = real ? this._peak(b) : 0, m = `${Math.floor(b.time_s / 60)}:${String(b.time_s % 60).padStart(2, '0')}`;
     const t = this._tg(b.mode), s = this._states(b), rng = (r, u = '') => r ? `${L.target} ${r[0]}–${r[1]}${u}` : '';
-    const tile = (cls, label, val, st, sub) => `<div class="tile ${cls} ${st}"><span class="tl"><i class="dot"></i>${esc(label)}</span><b>${val}</b><small>${esc(sub)}</small></div>`, miss = (st, r, u = '') => st === 'out' ? rng(r, u) : '';
+    const tile = (cls, label, val, st, sub) => `<div class="tile ${cls} ${st}"><span class="tl"><i class="dot"></i>${esc(label)}</span><b>${val}</b><small class="${st}">${st === 'in' ? ic('check', 'ok') : ''}${esc(sub)}</small></div>`, miss = (st, r, u = '') => st ? rng(r, u) : ''; // target line: range, coloured by inside/outside
     const fv = c.flow_value === 'avg' ? this._flow(b) : (pk || this._flow(b)), showAvg = pk && c.flow_value !== 'avg';
-    return `<div class="tiles">${tile('r', L.ratio, b.ratio ? b.ratio.toFixed(1) : '--', s.ratio, miss(s.ratio, t.ratio) || (b.dose_g ? `${+b.dose_g.toFixed(1)} g ${L.dose}` : ''))}
-      ${tile('f', L.flow, fv.toFixed(1), s.flow, miss(s.flow, t.flow) || (showAvg ? `${L.avg} ${this._flow(b).toFixed(1)}` : ''))}
+    return `<div class="tiles">${tile('r', L.ratio, b.ratio ? b.ratio.toFixed(1) : '--', s.ratio, (s.ratio === 'in' && b.dose_g ? '' : miss(s.ratio, t.ratio)) || (b.dose_g ? `${+b.dose_g.toFixed(1)} g ${L.dose}` : ''))}
+      ${tile('f', L.flow, fv.toFixed(1), s.flow, (s.flow === 'in' && showAvg ? '' : miss(s.flow, t.flow)) || (showAvg ? `${L.avg} ${this._flow(b).toFixed(1)}` : ''))}
       ${tile('w', L.weight, b.yield_g.toFixed(1), s.yield, miss(s.yield, t.yield))}${tile('t', L.time, m, s.time, miss(s.time, t.time, ' s'))}</div>
       ${this._ok(b) ? `<div class="chip">${ic('check')} ${esc(L.inTarget)}</div>` : ''}`;
   }
@@ -274,7 +274,7 @@ class MavoLumicurveCard extends HTMLElement {
 const HEX = /^#([0-9a-f]{6})$/i;
 const toRgb = h => { const m = HEX.exec(h || ''); return m ? [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16)) : undefined; };
 const toHex = a => '#' + a.map(n => Math.round(n).toString(16).padStart(2, '0')).join('');
-const COLOR_DEFAULTS = { accent: '#e8b54a', color_ratio: '#f0883e', color_flow: '#6fd26b', color_weight: '#9b8cff', color_time: '#e266a8', color_in: '#7fdc8a', color_out: '#f0a06a', color_pill: '#735b5c', text_color: '#f4efe6', background: '#4a3d2c', background_end: '#2a2217' }; // what the picker shows while nothing is set
+const COLOR_DEFAULTS = { accent: '#e8b54a', color_ratio: '#f59a57', color_flow: '#7ddb79', color_weight: '#a99cff', color_time: '#ec7ab5', color_in: '#7fdc8a', color_out: '#f0a06a', color_pill: '#735b5c', text_color: '#f4efe6', background: '#4a3d2c', background_end: '#2a2217' }; // what the picker shows while nothing is set
 const COLORS = ['accent', 'color_ratio', 'color_flow', 'color_weight', 'color_time', 'color_in', 'color_out', 'color_pill', 'text_color', 'background', 'background_end'];
 const METRICS = [['time', 'time', 0, 900, 1], ['yield', 'yield', 0, 700, 0.1], ['flow', 'flow', 0, 30, 0.1], ['ratio', 'ratio', 0, 40, 0.1]];
 const sel = (o) => ({ select: { mode: 'dropdown', options: o } }), bool = { boolean: {} }, col = { color_rgb: {} };

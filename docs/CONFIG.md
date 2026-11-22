@@ -45,8 +45,8 @@ All keys are optional except one data source. A key set in the card config alway
 |---|---|---|
 | `theme` | `auto` | `auto` = the glass look (dark; every colour from `--mlc-*`, then host tokens `--gold`, `--paper`, `--muted`, then built-in), `dark` = the classic look of 1.0.x (brown gradient, own colours below), `ha` = text and background come from the HA theme (use it on light themes). See section 3a |
 | `accent` | `#e8b54a` | graph line, bars, selected items, stars, active buttons |
-| `color_ratio` / `color_flow` / `color_weight` / `color_time` | orange / green / purple / pink | the small dot of each tile (like the scale's screen) |
-| `color_in` / `color_out` | light accent (`auto`) or `#7fdc8a` / `#f0a06a` | tile value inside / outside its target; target band in the chart |
+| `color_ratio` / `color_flow` / `color_weight` / `color_time` | orange / green / purple / pink | dot and big value of each tile (like the scale's screen); defaults are lighter on dark panels, darker with `theme: ha` |
+| `color_in` / `color_out` | light accent (`auto`) or `#7fdc8a` / `#f0a06a` | the tile's "Target ..." line (with a check mark inside) and the target band in the chart; the value keeps its tile colour |
 | `color_pill` | neutral glass (`dark`: accent mixed with purple) | brew selector pill; set it only if you want a coloured pill |
 | `text_color` | `#f4efe6` | text (not with `theme: ha`) |
 | `background`, `background_end` | `#1f2a3f`, `#141b2b` (`dark`: `#4a3d2c`, `#2a2217`) | gradient of the panel (not with `theme: ha`, not with `surface: none`); set only `background` for a flat colour |

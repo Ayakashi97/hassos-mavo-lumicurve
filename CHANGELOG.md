@@ -5,6 +5,9 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Changed
+- The big tile values use the tile's own colour (ratio orange, flow green, weight violet, time pink; options `color_ratio` etc. and `--mlc-ratio` etc. apply, slightly lighter defaults for contrast). Inside/outside the target is now shown by the colour of the "Target ..." line (check mark inside), not by the value.
+
 ## [1.1.0] - 2026-11-22
 
 ### Added
