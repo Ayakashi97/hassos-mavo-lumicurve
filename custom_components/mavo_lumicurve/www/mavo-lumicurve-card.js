@@ -28,11 +28,10 @@ function demoBrews() { // example brews for the empty state and `demo: true`: a 
   }
   return out;
 }
-const DEF = { language: 'de', theme: 'dark', chart_count: 30, chart_metric: 'time', default_mode: 'all', flow_value: 'auto', show_invalid: false, border_radius: 20, font_scale: 100,
+const DEF = { language: 'de', theme: 'auto', surface: 'card', layout: 'auto', chart_count: 30, chart_metric: 'time', default_mode: 'all', flow_value: 'auto', show_invalid: false, border_radius: 20, font_scale: 100,
   show_title: true, show_filter: true, show_tiles: true, show_graph: true, show_chart: true, show_stars: true, show_notes: true, show_menu: true, targets: {} };
-const VARS = { // config key -> [css variable, theme variable name, built-in default]
-  accent: ['--a', 'accent', '#e8b54a'], color_ratio: ['--c-r', 'ratio', '#f0883e'], color_flow: ['--c-f', 'flow', '#6fd26b'], color_weight: ['--c-w', 'weight', '#9b8cff'], color_time: ['--c-t', 'time', '#e266a8'],
-  color_in: ['--in', 'in', '#7fdc8a'], color_out: ['--out', 'out', '#f0a06a'], color_pill: ['--pill', 'pill', 'color-mix(in srgb,var(--a) 20%,#7a5cff 20%)'],
+const VARS = { // config key -> [css variable, theme variable name, built-in default]; accent, in, pill depend on `theme` (see _applyVars)
+  color_ratio: ['--c-r', 'ratio', '#f0883e'], color_flow: ['--c-f', 'flow', '#6fd26b'], color_weight: ['--c-w', 'weight', '#9b8cff'], color_time: ['--c-t', 'time', '#e266a8'], color_out: ['--out', 'out', '#f0a06a'],
 };
 const when = (ts, en) => { // "2026-11-19 13:53:56" -> parts; null when unknown
   const m = /^(\d{4})-(\d\d)-(\d\d) (\d\d:\d\d)(:\d\d)?/.exec(ts || ''); if (!m) return null;
@@ -40,50 +39,70 @@ const when = (ts, en) => { // "2026-11-19 13:53:56" -> parts; null when unknown
   return { short: en ? `${m[2]}/${m[3]}` : `${m[3]}.${m[2]}.`, date, time: m[4], full: `${date} ${m[4]}`, year: +m[1] };
 };
 const CSS = `
-:host{display:block;color:var(--tx);font:calc(14px*var(--fsc))/1.35 system-ui,-apple-system,sans-serif;--mut:color-mix(in srgb,var(--tx) 62%,transparent);--s1:color-mix(in srgb,var(--tx) 8%,transparent);--s2:color-mix(in srgb,var(--tx) 13%,transparent);--bd:color-mix(in srgb,var(--tx) 18%,transparent);--bd2:color-mix(in srgb,var(--tx) 25%,transparent)}
+:host{display:block;container-type:inline-size;color:var(--tx);font:calc(14px*var(--fsc))/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;--s1:color-mix(in srgb,var(--tx) 7%,transparent);--s2:color-mix(in srgb,var(--tx) 12%,transparent);--bd:color-mix(in srgb,var(--tx) 18%,transparent);--bd2:color-mix(in srgb,var(--tx) 26%,transparent);--hl:inset 0 1px 0 color-mix(in srgb,var(--tx) 14%,transparent)}
 *{box-sizing:border-box}
-.card{container-type:inline-size;border-radius:var(--r);padding:14px;background:linear-gradient(155deg,var(--bg1),var(--bg2));border:1px solid var(--bd);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--tx) 20%,transparent),0 10px 30px rgba(0,0,0,.28)}
+.card{--ph:clamp(120px,26cqw,200px);position:relative;padding:16px;border-radius:var(--r);background:linear-gradient(155deg,var(--bg1),var(--bg2));border:1px solid var(--bd);box-shadow:var(--hl),0 10px 30px rgba(0,0,0,.28)}
+.card.s-none{padding:0;border:0;border-radius:0;background:none;box-shadow:none}
 .ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-header .logo{width:32px;height:32px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--a) 22%,transparent);color:var(--a)}
-header h2{margin:0;font-size:1.07em;font-weight:650;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.seg{display:flex;gap:6px}header .seg button{min-height:34px;padding:0 11px;font-size:.93em}
-button{font:inherit;color:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--bd);background:var(--s1);cursor:pointer;transition:transform .12s,background .15s}
-button:hover{background:var(--s2)}button:active{transform:scale(.97)}
-button.on{background:color-mix(in srgb,var(--a) 22%,transparent);color:var(--a);border-color:var(--a)}
+button{font:inherit;color:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--bd);background:var(--s1);cursor:pointer;transition:transform .12s,background .15s,border-color .15s}
+button:hover{background:var(--s2)}button:active{transform:scale(.97)}button:disabled{opacity:.35;cursor:default}
 button:focus-visible,.row:focus-visible{outline:2px solid var(--a);outline-offset:2px}
-button.icon{min-width:40px;padding:0}button:disabled{opacity:.35;cursor:default}
-.hero{display:block;padding:10px;border-radius:calc(var(--r) * .8);background:var(--hero);margin-bottom:12px}
-.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--s1);font-size:.86em}.chip .ic{width:14px;height:14px}
-.chip.ok{background:color-mix(in srgb,var(--in) 24%,transparent);color:var(--in)}
-.lab{font-size:.79em;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:6px}
-.pillrow{position:relative;display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:12px}
-.pilltoggle{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;min-height:40px;padding:5px 12px;border-radius:999px;background:var(--pill);font-size:.86em;font-weight:600;white-space:nowrap;border:1px solid var(--bd)}
-.pilltoggle.static{cursor:default;justify-content:center}
-.tiles{display:grid;grid-template-columns:1fr 1fr;margin-bottom:10px}
-.tile{padding:8px 4px 6px;text-align:center}.tile.r,.tile.f{border-bottom:1px solid var(--bd2)}.tile.r,.tile.w{border-right:1px solid var(--bd2)}
-.tile b{display:block;font-size:calc(clamp(24px,10cqw,34px)*var(--fsc));font-weight:700;letter-spacing:-.02em;line-height:1.1}.tile span{font-size:.86em}.tile small{display:block;font-size:.79em;color:var(--mut);min-height:13px}
-.tile.r span{color:var(--c-r)}.tile.f span{color:var(--c-f)}.tile.w span{color:var(--c-w)}.tile.t span{color:var(--c-t)}
-.tile small.in{color:var(--in)}.tile small.out{color:var(--out)}
-.graph svg{width:100%;display:block}.graph text{fill:var(--mut);font-size:9px}
-.graph .gr{stroke:var(--bd2);stroke-width:1;stroke-dasharray:2 3}.graph .area{fill:var(--a);opacity:.1}.graph .end{stroke:var(--mut);stroke-width:1;stroke-dasharray:3 3}
-.graph .mk{fill:var(--tx)}.graph .wl{fill:none;stroke:var(--a);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.graph .wl.dash{stroke-dasharray:5 4;opacity:.85}.graph .wd{fill:var(--a)}
-.chart{margin:4px 0 14px}.chart svg{width:100%;height:auto;display:block}.chart text{fill:var(--mut);font-size:6.5px}.chart .vl{fill:color-mix(in srgb,var(--tx) 85%,transparent)}.chart .vl.cur{fill:var(--a);font-weight:700}
-.chart rect.b{fill:var(--a);opacity:.85;cursor:pointer}.chart rect.b.out{opacity:.3}.chart rect.b.cur{stroke:var(--tx);stroke-width:1}.chart rect.band{fill:var(--in);opacity:.14}.chart .ax{stroke:var(--bd2);stroke-width:1}
-.row{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:10px;border-radius:14px;cursor:pointer}
-.row:hover{background:var(--s1)}.row.sel{background:color-mix(in srgb,var(--a) 16%,transparent)}
-.row .t{width:52px;height:44px;border-radius:14px;display:grid;place-items:center;text-align:center;background:var(--s1);font-size:.79em;line-height:1.25;font-weight:600}
-.row .t.ok{background:color-mix(in srgb,var(--in) 24%,transparent);color:var(--in)}
-.row b{font-weight:600}.row small{display:block;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.row .r{text-align:right;font-size:.86em;color:var(--mut)}.stars{color:var(--a);letter-spacing:1px}
-.menu{position:absolute;z-index:5;left:0;right:0;top:46px;max-height:340px;overflow:auto;padding:6px;border-radius:18px;background:linear-gradient(160deg,var(--bg1),var(--bg2));border:1px solid var(--bd);box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 1px 0 color-mix(in srgb,var(--tx) 20%,transparent)}
-.day{margin:12px 0 2px 10px;font-size:.79em;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
-.notes{margin:6px 0 0;display:grid;gap:8px}.notes .st{display:flex;gap:6px;align-items:center}.notes .st button{min-width:40px;padding:0}.notes .st button.on .ic{fill:var(--a)}.notes .st .icon{margin-left:auto}.mut{font-size:.86em;color:var(--mut)}
+button.icon{width:40px;padding:0}button.ghost{background:none;border-color:transparent}button.ghost:hover{background:var(--s1)}
+.seg{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--s1);border:1px solid var(--bd)}
+.seg button{min-height:32px;padding:0 14px;background:none;border-color:transparent;font-size:.93em}.seg button:hover{background:var(--s2)}
+.seg button.on{background:color-mix(in srgb,var(--a) 20%,transparent);color:var(--a);border-color:var(--a)}
+.seg.sm button{min-height:26px;padding:0 10px;font-size:.86em}
+header{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin-bottom:16px}
+header h2{margin:0;font-size:1.07em;font-weight:600;font-variant-caps:all-small-caps;letter-spacing:.16em;color:var(--a);white-space:nowrap}
+.nav{display:flex;align-items:center;gap:6px;margin-left:auto;min-width:0}
+.pill{min-width:0;padding:0 14px;font-size:.93em;white-space:nowrap}.pill[aria-expanded=true]{border-color:var(--a);color:var(--a)}
+.pill span{overflow:hidden;text-overflow:ellipsis}.pill.static{cursor:default;background:var(--pill)}
+.pill:not(.static){background:var(--pill)}
+@container (max-width:559px){.nav{flex:1 0 100%}.pill{flex:1}}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@container (min-width:560px){.tiles{grid-template-columns:repeat(4,1fr)}}
+.tile{min-width:0;padding:12px 14px;border-radius:calc(var(--r)*.8);border:1px solid var(--bd);background:color-mix(in srgb,var(--tx) 5%,transparent);box-shadow:var(--hl)}
+.tl{display:flex;align-items:center;gap:7px;font-size:.82em;text-transform:uppercase;letter-spacing:.09em;color:var(--mut)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--dc);flex:none}
+.tile.r{--dc:var(--c-r)}.tile.f{--dc:var(--c-f)}.tile.w{--dc:var(--c-w)}.tile.t{--dc:var(--c-t)}
+.tile b{display:block;margin:6px 0 2px;font-family:var(--mlc-display,inherit);font-size:2.143em;font-weight:600;letter-spacing:-.01em;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile.in b{color:var(--in)}.tile.out b{color:var(--out)}
+.tile small{display:block;min-height:1.3em;font-size:.893em;color:var(--mut)}
+.chip{display:inline-flex;align-items:center;gap:4px;margin-top:10px;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--in) 18%,transparent);color:var(--in);font-size:.86em}.chip .ic,.ic.ok{width:14px;height:14px}
+.sec{margin-top:16px;padding-top:14px;border-top:1px solid var(--bd);min-width:0}
+.split{display:grid;gap:0 24px}
+@container (min-width:720px){.l-auto .split.two{grid-template-columns:3fr 2fr}}
+.l-wide .split.two{grid-template-columns:3fr 2fr}
+.sh{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:30px;font-size:.86em;color:var(--mut)}
+.plot{position:relative;height:var(--ph);margin:18px 12px 26px 34px}
+.plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.gl{position:absolute;left:0;right:0;height:0;border-top:1px dotted var(--bd2)}.gl.z{border-top-style:solid}
+.yl,.xl{position:absolute;font-size:.786em;line-height:1;white-space:nowrap;color:var(--mut);font-variant-numeric:tabular-nums}
+.yl{right:calc(100% + 6px);transform:translateY(-50%)}.xl{top:calc(100% + 8px);transform:translateX(-50%)}
+.wl{fill:none;stroke:var(--a);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.pt{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--a);box-shadow:0 0 0 3px color-mix(in srgb,var(--a) 25%,transparent)}
+.bars{position:absolute;inset:0;display:flex;align-items:flex-end;gap:2px}
+.bw{position:relative;flex:1 1 0;min-width:0;height:100%;display:flex;justify-content:center;align-items:flex-end;cursor:pointer}
+.bar{width:max(3px,min(8px,75%));border-radius:4px 4px 1px 1px;background:color-mix(in srgb,var(--a) 35%,transparent);transition:background .15s}
+.bw:hover .bar{background:color-mix(in srgb,var(--a) 60%,transparent)}.bw.cur .bar{background:var(--a)}
+.vl{position:absolute;left:50%;transform:translateX(-50%);font-size:.786em;line-height:1;color:var(--tx);font-variant-numeric:tabular-nums;pointer-events:none}
+.bw.cur .vl{color:var(--a);font-weight:700}.bw.f .vl{left:0;transform:none}.bw.l .vl{left:auto;right:0;transform:none}
+.band{position:absolute;left:0;right:0;border-radius:4px;background:var(--in);opacity:.12}
+.notes{display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px}
+.notes button{width:40px;padding:0;color:var(--mut)}.notes button.on{color:var(--a)}.notes .ic{width:24px;height:24px}.notes button.on .ic{fill:var(--a)}
+.notes .nt{flex:1 1 140px;min-width:0;padding-left:8px;font-size:.93em;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ed{flex:1 0 100%;display:grid;gap:8px;margin-top:6px}
 input,textarea{font:inherit;color:inherit;padding:9px 12px;border-radius:12px;border:1px solid var(--bd);background:var(--s1)}
 input:focus-visible,textarea:focus-visible{outline:2px solid var(--a);outline-offset:1px}
-.hint{margin:0 0 10px;padding:8px 12px;border-radius:10px;font-size:.8em;background:color-mix(in srgb,var(--a) 18%,transparent)}
+.menu{position:absolute;z-index:5;top:calc(100% + 8px);right:0;width:min(460px,100%);max-height:min(380px,60vh);overflow:auto;padding:6px;border-radius:calc(var(--r)*.9);background:linear-gradient(var(--sheet),var(--sheet)),var(--base);border:1px solid var(--bd);box-shadow:0 16px 40px rgba(0,0,0,.5),var(--hl)}
+@container (max-width:559px){.menu{left:0;width:auto}}
+.day{margin:12px 0 2px 12px;font-size:.82em;text-transform:uppercase;letter-spacing:.09em;color:var(--mut)}.day:first-child{margin-top:6px}
+.row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;min-height:52px;padding:8px 12px;border-radius:12px;cursor:pointer}
+.row:hover{background:var(--s1)}.row.sel{background:color-mix(in srgb,var(--a) 16%,transparent)}
+.row b{display:block;font-size:1.07em;font-weight:500}.row small{display:block;font-size:.893em;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .r{text-align:right;font-size:.893em;color:var(--mut)}.stars{color:var(--a)}
+.hint{margin:0 0 12px;padding:8px 12px;border-radius:10px;font-size:.86em;background:color-mix(in srgb,var(--a) 18%,transparent)}
 .empty{opacity:.7;padding:20px 0;text-align:center}
-@media (max-width:360px){header .logo{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}`;
 
 class MavoLumicurveCard extends HTMLElement {
@@ -99,15 +118,22 @@ class MavoLumicurveCard extends HTMLElement {
     if (!this.shadowRoot) { const r = this.attachShadow({ mode: 'open' }); this._wire(r); }
     this._notes = this._int ? (this._notes || {}) : this._load(); if (c.demo) { this._brews = demoBrews(); this._draw(); } else if (c.brews) { this._brews = c.brews; this._draw(); } else if (this._int) this._ws(); else this._fetch();
   }
-  _applyVars() { // explicit config wins; otherwise the theme variable --mlc-<name>; otherwise the built-in default
-    const c = this._c, ha = c.theme === 'ha', set = (k, v) => this.style.setProperty(k, v);
+  _applyVars() { // explicit config wins; otherwise the theme variable --mlc-<name>; otherwise the host token (theme auto only) or the built-in default
+    const c = this._c, ha = c.theme === 'ha', auto = c.theme === 'auto', set = (k, v) => this.style.setProperty(k, v);
     const pick = (key, name, def) => (c[key] !== undefined && c[key] !== '' ? c[key] : `var(--mlc-${name}, ${def})`);
     for (const [key, [v, name, def]] of Object.entries(VARS)) set(v, pick(key, name, def));
+    set('--a', pick('accent', 'accent', auto ? 'var(--gold, #e8b54a)' : '#e8b54a'));
+    set('--in', pick('color_in', 'in', auto ? 'color-mix(in srgb, var(--a) 72%, #fff)' : '#7fdc8a'));
+    set('--pill', pick('color_pill', 'pill', ha || auto ? 'var(--s1)' : 'color-mix(in srgb,var(--a) 20%,#7a5cff 20%)'));
     const haBg = 'var(--ha-card-background, var(--card-background-color, #2a2217))';
-    set('--tx', ha ? 'var(--primary-text-color, #f4efe6)' : pick('text_color', 'text', '#f4efe6'));
-    set('--bg1', ha ? haBg : pick('background', 'bg', '#4a3d2c'));
-    set('--bg2', ha ? haBg : (c.background && c.background_end === undefined ? c.background : pick('background_end', 'bg2', '#2a2217')));
-    set('--hero', ha ? 'color-mix(in srgb, var(--tx) 5%, transparent)' : 'rgba(0,0,0,.2)');
+    set('--tx', ha ? 'var(--primary-text-color, #f4efe6)' : pick('text_color', 'text', auto ? 'var(--paper, #f4efe6)' : '#f4efe6'));
+    set('--mut', auto ? 'var(--mlc-muted, var(--muted, color-mix(in srgb, var(--tx) 66%, transparent)))' : 'color-mix(in srgb, var(--tx) 62%, transparent)');
+    const bg2 = c.background && c.background_end === undefined ? c.background : pick('background_end', 'bg2', auto ? '#141b2b' : '#2a2217');
+    set('--bg1', ha ? haBg : pick('background', 'bg', auto ? '#1f2a3f' : '#4a3d2c'));
+    set('--bg2', ha ? haBg : bg2);
+    // the brew list must never be see-through: a solid sheet over a solid base, whatever the card background is
+    set('--sheet', ha ? 'var(--card-background-color, #fff)' : `var(--mlc-sheet, ${auto && !c.background && !c.background_end ? '#1b2437' : bg2})`);
+    set('--base', ha ? 'var(--primary-background-color, #fff)' : '#141b2b');
     set('--r', `${+c.border_radius}px`); set('--fsc', String((+c.font_scale || 100) / 100));
   }
   _wire(r) { // ShadowRoot has no onclick property, so use listeners (registered once)
@@ -115,14 +141,16 @@ class MavoLumicurveCard extends HTMLElement {
       const t = e.target.closest('[data-nav],[data-notes],[data-menu],[data-pick],[data-m],[data-c],[data-s]');
       if (!t) { if (this._menu && !e.target.closest('.menu')) { this._menu = false; this._draw(); } return; }
       if (t.disabled) return;
+      let back = false; // a pick from the list returns focus to the pill
       if (t.dataset.nav) { const l = this._list(), i = Math.max(0, l.findIndex(b => b.id === this._selId)) + +t.dataset.nav; this._sel = l[Math.min(Math.max(i, 0), l.length - 1)]?.id; this._nopen = false; }
       else if ('menu' in t.dataset) this._menu = !this._menu;
       else if ('notes' in t.dataset) this._nopen = !this._nopen;
-      else if (t.dataset.pick) { this._sel = t.dataset.pick; this._menu = false; this._nopen = false; }
+      else if (t.dataset.pick) { back = this._menu; this._sel = t.dataset.pick; this._menu = false; this._nopen = false; }
       else if (t.dataset.c) this._c.chart_metric = t.dataset.c;
       else if (t.dataset.m) { this._mode = t.dataset.m; this._sel = null; this._menu = false; }
       else if (t.dataset.s) { const o = this._notes[this._selId] ||= {}; o.stars = o.stars === +t.dataset.s ? 0 : +t.dataset.s; this._save(); }
       this._draw();
+      if (back) this.shadowRoot.querySelector('[data-menu]')?.focus();
       if (this._menu) { const s = this.shadowRoot.querySelector('.menu .sel'); s?.scrollIntoView({ block: 'center' }); s?.focus(); }
     });
     r.addEventListener('keydown', e => {
@@ -169,13 +197,14 @@ class MavoLumicurveCard extends HTMLElement {
     const d = list.filter(b => b.mode === mode).slice(0, this._c.chart_count).reverse(); /* long pours would flatten the espresso bars */
     if (!d.length) return '';
     const vs = d.map(val).sort((p, q) => p - q), cap = Math.max(vs[Math.floor(0.9 * (vs.length - 1))] * 1.2, tt ? tt[1] * 1.2 : 0, fl ? 1 : 10); // an outlier must not flatten all other bars
-    const max = Math.min(Math.max(fl ? 1 : 10, vs[vs.length - 1], tt ? tt[1] : 0), cap), X0 = 22, w = (300 - X0) / d.length, y = v => 64 - 50 * Math.min(v, max) / max;
-    const fmt = v => fl ? v.toFixed(1) : String(v), step = Math.ceil((fmt(max).length * 4 + 1) / w); // label every n-th bar so numbers never overlap
-    return `<div class="chart"><div class="lab" style="display:flex;justify-content:space-between;align-items:center">${fl ? L.chartFlow : L.chartTime} · ${L.last} ${d.length}${mode === 'pourover' ? ' ' + L.pourover : ''}<span class="seg">${[['time', L.btnTime], ['flow', L.btnFlow]].map(([k, t]) => `<button data-c="${k}" class="${(fl ? 'flow' : 'time') === k ? 'on' : ''}" style="min-height:32px;padding:0 10px">${esc(t)}</button>`).join('')}</span></div><svg viewBox="0 0 300 72" role="img" aria-label="${fl ? L.chartFlow : L.chartTime}; ${L.pickHint}">
-      ${tt ? `<rect class="band" x="${X0}" y="${y(tt[1])}" width="${300 - X0}" height="${Math.max(0, y(tt[0]) - y(tt[1]))}" rx="3"/>` : ''}
-      <text x="${X0 - 3}" y="${y(max) + 3}" text-anchor="end">${fmt(max)}</text><text x="${X0 - 3}" y="67" text-anchor="end">0</text><line class="ax" x1="${X0}" x2="300" y1="64.5" y2="64.5"/>
-      ${d.map((b, i) => `<rect class="b ${this._st(val(b), tt) === 'out' ? 'out' : ''} ${b.id === this._selId ? 'cur' : ''}" data-pick="${esc(b.id)}" x="${X0 + i * w + 1}" y="${y(val(b))}" width="${Math.max(w - 2, 1)}" height="${Math.max(0, 64 - y(val(b)))}" rx="2"><title>${esc(this._disp(b).full)}: ${fmt(val(b))}</title></rect>
-        ${(d.length - 1 - i) % step === 0 ? `<text class="vl ${b.id === this._selId ? 'cur' : ''}" x="${X0 + i * w + w / 2}" y="${y(val(b)) - 2}" text-anchor="middle">${fmt(val(b))}</text>` : ''}`).join('')}</svg></div>`;
+    const max = Math.min(Math.max(fl ? 1 : 10, vs[vs.length - 1], tt ? tt[1] : 0), cap), y = v => 100 * Math.min(v, max) / max, fmt = v => fl ? v.toFixed(1) : String(v);
+    const si = d.findIndex(b => b.id === this._selId), vi = d.map(val), hi = vi.indexOf(Math.max(...vi)), lo = vi.indexOf(Math.min(...vi)), shown = [];
+    for (const i of [si, hi, lo]) if (i >= 0 && shown.every(j => Math.abs(i - j) > 2)) shown.push(i); // value labels: selected, max, min; never touching each other
+    const title = `${fl ? L.chartFlow : L.chartTime} · ${L.last} ${d.length}${mode === 'pourover' ? ' ' + L.pourover : ''}`;
+    return `<div class="sec chart"><div class="sh"><span>${esc(title)}</span><span class="seg sm">${[['time', L.btnTime], ['flow', L.btnFlow]].map(([k, t]) => `<button data-c="${k}" class="${(fl ? 'flow' : 'time') === k ? 'on' : ''}">${esc(t)}</button>`).join('')}</span></div>
+      <div class="plot" role="group" aria-label="${esc(fl ? L.chartFlow : L.chartTime)}; ${esc(L.pickHint)}"><i class="gl z" style="top:100%"></i><i class="gl" style="top:0"></i><span class="yl" style="top:0">${fmt(max)}</span><span class="yl" style="top:100%">0</span>
+      ${tt ? `<i class="band" style="bottom:${y(tt[0])}%;height:${Math.max(0, y(tt[1]) - y(tt[0]))}%"></i>` : ''}
+      <div class="bars">${d.map((b, i) => `<div class="bw ${b.id === this._selId ? 'cur' : ''} ${i === 0 ? 'f' : i === d.length - 1 ? 'l' : ''}" data-pick="${esc(b.id)}" title="${esc(this._disp(b).full)}: ${fmt(val(b))}"><i class="bar" style="height:${y(val(b))}%"></i>${shown.includes(i) ? `<span class="vl" style="bottom:calc(${y(val(b))}% + 4px)">${fmt(val(b))}</span>` : ''}</div>`).join('')}</div></div></div>`;
   }
   _nice(v) { return [20, 40, 70, 100, 140, 200, 300, 400, 600].find(s => s >= v) || Math.ceil(v / 100) * 100; }
   _peak(b) { // peak flow between samples that are >= 3 s apart (same idea as the scale's number, to be confirmed)
@@ -183,47 +212,47 @@ class MavoLumicurveCard extends HTMLElement {
     for (let i = 1; i < p.length; i++) { while (p[i][0] - p[j][0] > 3 && j < i - 1) j++; const dt = p[i][0] - p[j][0]; if (dt >= 1) best = Math.max(best, (p[i][1] - p[j][1]) / dt); }
     return best;
   }
-  _graph(b) { // look of the scale's own display: (g) axis, 4 s ticks, dotted grid, end marker
-    const pts = b.curve || [[0, 0], [b.time_s, b.yield_g]], T = b.time_s, real = pts.length >= 5;
+  _graph(b) { // look of the scale's own display: (g) axis, 4 s ticks, dotted grid, end marker. Plot in % of its box (stretched svg, 2 px line), labels are HTML so text keeps its size
+    const L = this._L, pts = b.curve || [[0, 0], [b.time_s, b.yield_g]], T = b.time_s, real = pts.length >= 5;
     const ym = this._nice(b.yield_g * 1.05), step = T <= 22 ? 4 : T <= 70 ? 10 : 30, xm = Math.max(20, Math.ceil(T * 1.1 / step) * step);
-    const L = 26, R = 292, Tp = 18, B = 90, x = t => L + (R - L) * t / xm, y = g => B - (B - Tp) * g / ym;
-    const xt = []; for (let t = 0; t <= xm; t += step) xt.push(t);
-    const path = pts.map((p, i) => (i ? 'L' : 'M') + x(p[0]).toFixed(1) + ' ' + y(p[1]).toFixed(1)).join('');
-    return `<div class="graph"><svg viewBox="0 0 300 112" role="img" aria-label="${esc(this._L.graphAria.replace('{s}', T))}">
-      <text x="2" y="9">(g)</text><text x="298" y="9" text-anchor="end">(s)</text>${real ? '' : `<text x="150" y="9" text-anchor="middle" opacity=".6">${esc(this._L.estimated)}</text>`}
-      ${[0, .5, 1].map(f => `<line class="gr" x1="${L}" x2="${R}" y1="${y(ym * f)}" y2="${y(ym * f)}"/><text x="${L - 4}" y="${y(ym * f) + 3}" text-anchor="end">${Math.round(ym * f)}</text>`).join('')}
-      ${xt.map(t => `<text x="${x(t)}" y="${B + 12}" text-anchor="middle">${t}</text>`).join('')}
-      <path class="area" d="${path}L${x(T)} ${B}L${L} ${B}Z"/>
-      <line class="end" x1="${x(T)}" x2="${x(T)}" y1="${Tp - 4}" y2="${B}"/><path class="mk" d="M${x(T) - 4} ${Tp - 10}L${x(T) + 4} ${Tp - 10}L${x(T)} ${Tp - 3}Z"/>
-      <path class="wl ${real ? '' : 'dash'}" d="${path}"/>${real ? pts.slice(1, -1).map(p => `<circle class="wd" cx="${x(p[0])}" cy="${y(p[1])}" r="2.4"/>`).join('') : ''}</svg></div>`;
+    const x = t => +(100 * t / xm).toFixed(2), y = g => +(100 - 100 * g / ym).toFixed(2), xt = []; for (let t = 0; t <= xm; t += step) xt.push(t);
+    const path = pts.map((p, i) => (i ? 'L' : 'M') + x(p[0]) + ' ' + y(p[1])).join('');
+    return `<div class="sec graph"><div class="sh"><span>${esc((real ? '' : L.estimated + ' · ') + L.weight + ' · ' + L.time + ' (s)')}</span></div>
+      <div class="plot" role="img" aria-label="${esc(L.graphAria.replace('{s}', T))}">${[0, .5, 1].map(f => `<i class="gl ${f ? '' : 'z'}" style="top:${y(ym * f)}%"></i><span class="yl" style="top:${y(ym * f)}%">${Math.round(ym * f)}</span>`).join('')}
+      ${xt.map(t => `<span class="xl" style="left:${x(t)}%">${t}</span>`).join('')}
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="mlg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--a)" stop-opacity=".32"/><stop offset="1" style="stop-color:var(--a)" stop-opacity=".02"/></linearGradient></defs>
+      <path d="${path}L${x(T)} 100L0 100Z" fill="url(#mlg)"/><path class="wl" d="${path}"/></svg><i class="pt" style="left:${x(T)}%;top:${y(b.yield_g)}%"></i></div></div>`;
   }
-  _hero(b, pos, n, l) {
+  _nav(b, pos, n, l) { // brew navigator: prev, pill (date · time · type) with the dropdown, next
+    const L = this._L, d = this._disp(b), txt = [d.short, d.time, b.mode === 'pourover' ? L.pourover : L.espresso].filter(Boolean).join(' · ');
+    return `<div class="nav"><button class="icon" data-nav="1" aria-label="${esc(L.older)}" ${pos >= n - 1 ? 'disabled' : ''}>${ic('left')}</button>
+      ${this._c.show_menu ? `<button class="pill" data-menu aria-haspopup="listbox" aria-expanded="${this._menu}" title="${n - pos}/${n}"><span>${esc(txt)}</span>${ic(this._menu ? 'up' : 'down')}</button>` : `<div class="pill static"><span>${esc(txt)}</span></div>`}
+      <button class="icon" data-nav="-1" aria-label="${esc(L.newer)}" ${pos <= 0 ? 'disabled' : ''}>${ic('right')}</button>
+      ${this._menu ? `<div class="menu" role="listbox" aria-label="${esc(L.pick)}">${this._menuRows(l)}</div>` : ''}</div>`;
+  }
+  _tiles(b) {
     const c = this._c, L = this._L, real = (b.curve || []).length >= 5, pk = real ? this._peak(b) : 0, m = `${Math.floor(b.time_s / 60)}:${String(b.time_s % 60).padStart(2, '0')}`;
     const t = this._tg(b.mode), s = this._states(b), rng = (r, u = '') => r ? `${L.target} ${r[0]}–${r[1]}${u}` : '';
-    const tile = (cls, label, val, st, sub) => `<div class="tile ${cls} ${st}"><b>${val}</b><span>${esc(label)}</span><small class="${st}">${esc(sub)}</small></div>`, miss = (st, r, u = '') => st === 'out' ? rng(r, u) : '';
-    const no = this._notes[b.id] || {}, d = this._disp(b);
-    const fv = c.flow_value === 'avg' ? this._flow(b) : c.flow_value === 'peak' ? (pk || this._flow(b)) : (pk || this._flow(b)), showAvg = pk && c.flow_value !== 'avg';
-    const pill = `${n - pos}/${n} · ${esc(d.short)} ${esc(d.time)}`;
-    return `<div class="hero"><div class="pillrow"><button class="icon" data-nav="1" aria-label="${esc(L.older)}" ${pos >= n - 1 ? 'disabled' : ''}>${ic('left')}</button>
-      ${c.show_menu ? `<button class="pilltoggle" data-menu aria-haspopup="listbox" aria-expanded="${this._menu}">${pill} ${ic(this._menu ? 'up' : 'down')}</button>` : `<div class="pilltoggle static">${pill}</div>`}
-      <button class="icon" data-nav="-1" aria-label="${esc(L.newer)}" ${pos <= 0 ? 'disabled' : ''}>${ic('right')}</button>
-      ${this._menu ? `<div class="menu" role="listbox" aria-label="${esc(L.pick)}">${this._menuRows(l)}</div>` : ''}</div>
-      ${c.show_tiles ? `<div class="tiles">${tile('r', L.ratio, b.ratio ? b.ratio.toFixed(1) : '--', s.ratio, miss(s.ratio, t.ratio) || (b.dose_g ? `${+b.dose_g.toFixed(1)} g ${L.dose}` : ''))}
+    const tile = (cls, label, val, st, sub) => `<div class="tile ${cls} ${st}"><span class="tl"><i class="dot"></i>${esc(label)}</span><b>${val}</b><small>${esc(sub)}</small></div>`, miss = (st, r, u = '') => st === 'out' ? rng(r, u) : '';
+    const fv = c.flow_value === 'avg' ? this._flow(b) : (pk || this._flow(b)), showAvg = pk && c.flow_value !== 'avg';
+    return `<div class="tiles">${tile('r', L.ratio, b.ratio ? b.ratio.toFixed(1) : '--', s.ratio, miss(s.ratio, t.ratio) || (b.dose_g ? `${+b.dose_g.toFixed(1)} g ${L.dose}` : ''))}
       ${tile('f', L.flow, fv.toFixed(1), s.flow, miss(s.flow, t.flow) || (showAvg ? `${L.avg} ${this._flow(b).toFixed(1)}` : ''))}
       ${tile('w', L.weight, b.yield_g.toFixed(1), s.yield, miss(s.yield, t.yield))}${tile('t', L.time, m, s.time, miss(s.time, t.time, ' s'))}</div>
-      ${this._ok(b) ? `<div class="chip ok" style="margin:0 0 8px">${ic('check')} ${esc(L.inTarget)}</div>` : ''}` : ''}
-      ${c.show_graph ? this._graph(b) : ''}
-      ${c.show_stars || c.show_notes ? `<div class="notes"><div class="st">${c.show_stars ? [1, 2, 3, 4, 5].map(k => `<button data-s="${k}" class="${(no.stars || 0) >= k ? 'on' : ''}" aria-label="${k} ${esc(L.stars)}">${ic('star')}</button>`).join('') : ''}${c.show_notes ? `<button class="icon" data-notes aria-label="${esc(L.editNote)}" aria-expanded="${this._nopen}">${ic('edit')}</button>` : ''}</div>
-      ${this._nopen ? `<input data-f="bean" placeholder="${esc(L.bean)}" aria-label="${esc(L.bean)}" value="${esc(no.bean)}"><textarea data-f="note" rows="2" placeholder="${esc(L.note)}" aria-label="${esc(L.note)}">${esc(no.note)}</textarea>` : (no.bean || no.note) ? `<div class="mut">${esc([no.bean, no.note].filter(Boolean).join(' · '))}</div>` : ''}</div>` : ''}</div>`;
+      ${this._ok(b) ? `<div class="chip">${ic('check')} ${esc(L.inTarget)}</div>` : ''}`;
+  }
+  _notesRow(b) {
+    const c = this._c, L = this._L, no = this._notes[b.id] || {}, txt = [no.bean, no.note].filter(Boolean).join(' · ');
+    return `<div class="sec notes">${c.show_stars ? [1, 2, 3, 4, 5].map(k => `<button class="ghost ${(no.stars || 0) >= k ? 'on' : ''}" data-s="${k}" aria-label="${k} ${esc(L.stars)}">${ic('star')}</button>`).join('') : ''}${c.show_notes ? `<button class="ghost icon" data-notes aria-label="${esc(L.editNote)}" aria-expanded="${this._nopen}">${ic('edit')}</button>` : ''}${c.show_notes && txt && !this._nopen ? `<span class="nt">${esc(txt)}</span>` : ''}
+      ${this._nopen ? `<div class="ed"><input data-f="bean" placeholder="${esc(L.bean)}" aria-label="${esc(L.bean)}" value="${esc(no.bean)}"><textarea data-f="note" rows="2" placeholder="${esc(L.note)}" aria-label="${esc(L.note)}">${esc(no.note)}</textarea></div>` : ''}</div>`;
   }
   _menuRows(l) { // the logbook: every brew, grouped by day, with notes and stars
     const L = this._L; let day = '', h = '';
     for (const b of l) {
       const d = this._disp(b), no = this._notes[b.id] || {};
       if (d.date !== day) { day = d.date; h += `<div class="day">${esc(d.date)}</div>`; }
-      h += `<div class="row ${b.id === this._selId ? 'sel' : ''}" tabindex="0" role="option" aria-selected="${b.id === this._selId}" data-pick="${esc(b.id)}"><div class="t ${this._ok(b) ? 'ok' : ''}"><span>${esc(d.short)}<br>${esc(d.time)}</span></div>
-        <div style="min-width:0"><b>${b.yield_g.toFixed(1)} g</b> in ${b.time_s} s · ${this._flow(b).toFixed(1)} g/s<small>${esc(no.bean || (b.mode === 'pourover' ? L.pourover : L.espresso))}${no.note ? ' · ' + esc(no.note) : ''}</small></div>
-        <div class="r">${b.ratio ? '1:' + b.ratio.toFixed(1) : ''}<div class="stars">${'★'.repeat(no.stars || 0)}</div></div></div>`;
+      h += `<div class="row ${b.id === this._selId ? 'sel' : ''}" tabindex="0" role="option" aria-selected="${b.id === this._selId}" data-pick="${esc(b.id)}">
+        <div style="min-width:0"><b>${b.yield_g.toFixed(1)} g in ${b.time_s} s · ${this._flow(b).toFixed(1)} g/s</b><small>${[d.time, no.bean || (b.mode === 'pourover' ? L.pourover : L.espresso), no.note].filter(Boolean).map(esc).join(' · ')}</small></div>
+        <div class="r">${this._ok(b) ? ic('check', 'ok') + ' ' : ''}${b.ratio ? '1:' + b.ratio.toFixed(1) : ''}<div class="stars">${'★'.repeat(no.stars || 0)}</div></div></div>`;
     }
     return h;
   }
@@ -231,10 +260,11 @@ class MavoLumicurveCard extends HTMLElement {
     const r = this.shadowRoot; if (!r) return;
     const c = this._c, L = this._L, l = this._list(), selPos = Math.max(0, l.findIndex(b => b.id === this._sel)), sel = l[selPos]; this._selId = sel?.id;
     const keep = r.activeElement?.dataset?.f, v = keep && r.activeElement.value;
-    const header = c.show_title || c.show_filter ? `<header>${c.show_title ? `<div class="logo">${ic('cup')}</div><h2>${esc(c.title ?? L.title)}</h2>` : '<h2></h2>'}
-        ${c.show_filter ? `<div class="seg">${['all', 'espresso', 'pourover'].map(k => `<button data-m="${k}" class="${this._mode === k ? 'on' : ''}">${esc(L[k])}</button>`).join('')}</div>` : ''}</header>` : '';
-    r.innerHTML = `<style>${CSS}</style><div class="card">${header}${this._demo ? `<div class="hint" role="note">${esc(L.demo)}</div>` : ''}
-      ${sel ? this._hero(sel, selPos, l.length, l) + (c.show_chart ? this._chart(l) : '') : `<div class="empty">${esc(L.empty)}</div>`}</div>`;
+    const header = c.show_title || c.show_filter || sel ? `<header>${c.show_title ? `<h2>${esc(c.title ?? L.title)}</h2>` : ''}
+        ${c.show_filter ? `<div class="seg">${['all', 'espresso', 'pourover'].map(k => `<button data-m="${k}" class="${this._mode === k ? 'on' : ''}">${esc(L[k])}</button>`).join('')}</div>` : ''}${sel ? this._nav(sel, selPos, l.length, l) : ''}</header>` : '';
+    const g = sel && c.show_graph ? this._graph(sel) : '', h = sel && c.show_chart ? this._chart(l) : '';
+    r.innerHTML = `<style>${CSS}</style><div class="card s-${c.surface === 'none' ? 'none' : 'card'} l-${c.layout === 'compact' || c.layout === 'wide' ? c.layout : 'auto'}">${header}${this._demo ? `<div class="hint" role="note">${esc(L.demo)}</div>` : ''}
+      ${sel ? (c.show_tiles ? this._tiles(sel) : '') + (g || h ? `<div class="split ${g && h ? 'two' : ''}">${g}${h}</div>` : '') + (c.show_stars || c.show_notes ? this._notesRow(sel) : '') : `<div class="empty">${esc(L.empty)}</div>`}</div>`;
     if (keep) { const el = r.querySelector(`[data-f="${keep}"]`); if (el) { el.focus(); el.setSelectionRange?.(v.length, v.length); } }
   }
   getCardSize() { return 9; }
@@ -253,7 +283,10 @@ const EDITOR_SCHEMA = [
   { name: 'title', selector: { text: {} } },
   { type: 'grid', name: '', schema: [
     { name: 'language', selector: sel([{ value: 'de', label: 'Deutsch' }, { value: 'en', label: 'English' }]) },
-    { name: 'theme', selector: sel([{ value: 'dark', label: 'Dark (own colours)' }, { value: 'ha', label: 'Home Assistant theme' }]) }] },
+    { name: 'theme', selector: sel([{ value: 'auto', label: 'Auto: glass look (dark, uses --mlc-* and host colours)' }, { value: 'dark', label: 'Dark: classic brown gradient' }, { value: 'ha', label: 'Home Assistant theme (light pages)' }]) }] },
+  { type: 'grid', name: '', schema: [
+    { name: 'surface', selector: sel([{ value: 'card', label: 'Card (own panel)' }, { value: 'none', label: 'None (no panel, for dialogs)' }]) },
+    { name: 'layout', selector: sel([{ value: 'auto', label: 'Auto (wide from 720 px)' }, { value: 'compact', label: 'Compact (stacked)' }, { value: 'wide', label: 'Wide (graph and chart side by side)' }]) }] },
   { type: 'expandable', name: '', title: 'Colours', icon: 'mdi:palette', schema: COLORS.map(name => ({ name, selector: col })) },
   { type: 'expandable', name: '', title: 'Show', icon: 'mdi:eye', schema: ['show_title', 'show_filter', 'show_tiles', 'show_graph', 'show_chart', 'show_stars', 'show_notes', 'show_menu'].map(name => ({ name, selector: bool })) },
   { type: 'expandable', name: '', title: 'Behaviour and look', icon: 'mdi:tune', schema: [
@@ -268,8 +301,8 @@ const EDITOR_SCHEMA = [
     { type: 'grid', name: '', schema: [{ name: `${mode}_${m}_min`, selector: { number: { min: lo, max: hi, step: st, mode: 'box' } } }, { name: `${mode}_${m}_max`, selector: { number: { min: lo, max: hi, step: st, mode: 'box' } } }] }]) })),
 ];
 const EDITOR_LABELS = {
-  entity: 'Other source (optional): entity with the attribute "brews". Empty = Mavo Lumicurve integration', title: 'Title', language: 'Language', theme: 'Theme', accent: 'Accent', color_ratio: 'Ratio colour', color_flow: 'Flow colour', color_weight: 'Weight colour', color_time: 'Time colour',
-  color_in: 'On target colour', color_out: 'Off target colour', color_pill: 'Brew selector colour', text_color: 'Text', background: 'Background', background_end: 'Background (gradient end)',
+  entity: 'Other source (optional): entity with the attribute "brews". Empty = Mavo Lumicurve integration', title: 'Title', language: 'Language', theme: 'Theme', surface: 'Surface', layout: 'Layout', accent: 'Accent', color_ratio: 'Ratio colour', color_flow: 'Flow colour', color_weight: 'Weight colour', color_time: 'Time colour',
+  color_in: 'On target colour', color_out: 'Off target colour', color_pill: 'Brew selector colour (default: neutral glass)', text_color: 'Text', background: 'Background', background_end: 'Background (gradient end)',
   show_title: 'Title', show_filter: 'Espresso/Filter buttons', show_tiles: 'Four tiles', show_graph: 'Weight graph', show_chart: 'History chart', show_stars: 'Stars', show_notes: 'Notes button', show_menu: 'Brew dropdown',
   default_mode: 'Start filter', chart_metric: 'Chart shows', flow_value: 'Flow tile shows', chart_count: 'Bars in the chart', border_radius: 'Corner radius (px)', font_scale: 'Text size', show_invalid: 'Show tare/noise events',
 };
