@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-22
+
 ### Added
 - Option `surface: card | none`: `none` removes the card's own panel, border and padding so a dashboard dialog can provide the glass.
 - Option `layout: auto | compact | wide`: graph and history chart side by side from 720 px width (`auto`), always (`wide`) or never (`compact`). The four tiles form one row from 560 px.
@@ -143,7 +145,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.6...v1.0.0
 [0.9.6]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.5...v0.9.6
