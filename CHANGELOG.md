@@ -5,6 +5,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-22
+
 ### Changed
 - The big tile values use the tile's own colour (ratio orange, flow green, weight violet, time pink; options `color_ratio` etc. and `--mlc-ratio` etc. apply, slightly lighter defaults for contrast). Inside/outside the target is now shown by the colour of the "Target ..." line (check mark inside), not by the value.
 
@@ -148,7 +150,8 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 ### Added
 - First card: logbook, flow rate, notes and stars. Scale tools: log sync, parser with real timestamps, discovery.
 
-[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Ayakashi97/hassos-mavo-lumicurve/compare/v0.9.6...v1.0.0
