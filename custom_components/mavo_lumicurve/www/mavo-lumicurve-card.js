@@ -14,8 +14,8 @@ const ic = (n, c = '') => `<svg class="ic ${c}" viewBox="0 0 24 24" aria-hidden=
 
 // ---- texts: `language` picks a set, `labels: {key: 'text'}` overrides single entries
 const LABELS = {
-  de: { title: 'Logbuch', all: 'Alle', espresso: 'Espresso', pourover: 'Filter', ratio: 'Verhältnis (x)', flow: 'Fluss (g/s)', weight: 'Gewicht (g)', time: 'Zeit', target: 'Ziel', inTarget: 'im Ziel', older: 'Älterer Bezug', newer: 'Neuerer Bezug', pick: 'Bezug auswählen', bean: 'Bohne', note: 'Notiz', editNote: 'Notiz bearbeiten', stars: 'Sterne', chartTime: 'Bezugszeit (s)', chartFlow: 'Durchfluss (g/s)', last: 'letzte', btnTime: 'Zeit', btnFlow: 'Fluss', earlier: 'früher', earlierDate: 'Frühere Sitzung', earlierFull: 'frühere Sitzung (Datum unbekannt)', estimated: 'Kurve geschätzt', empty: 'Noch keine Brühungen.', demo: 'Beispieldaten: Noch keine Waage eingerichtet. Einstellungen → Geräte & Dienste → Mavo Lumicurve hinzufügen (Waage vorher aufwecken).', dose: 'Kaffee', pickHint: 'Balken antippen zum Auswählen', graphAria: 'Gewichtsverlauf über {s} Sekunden', avg: 'Ø' },
-  en: { title: 'Logbook', all: 'All', espresso: 'Espresso', pourover: 'Filter', ratio: 'Ratio (x)', flow: 'Flow (g/s)', weight: 'Weight (g)', time: 'Time', target: 'Target', inTarget: 'on target', older: 'Older brew', newer: 'Newer brew', pick: 'Select brew', bean: 'Beans', note: 'Note', editNote: 'Edit note', stars: 'stars', chartTime: 'Brew time (s)', chartFlow: 'Flow (g/s)', last: 'last', btnTime: 'Time', btnFlow: 'Flow', earlier: 'earlier', earlierDate: 'Earlier session', earlierFull: 'earlier session (date unknown)', estimated: 'curve estimated', empty: 'No brews yet.', demo: 'Example data: no scale set up yet. Settings → Devices & services → add Mavo Lumicurve (wake the scale first).', dose: 'coffee', pickHint: 'tap a bar to select', graphAria: 'Weight over {s} seconds', avg: 'Ø' },
+  de: { title: 'Logbuch', all: 'Alle', espresso: 'Espresso', pourover: 'Filter', ratio: 'Verhältnis (x)', flow: 'Fluss (g/s)', weight: 'Gewicht (g)', time: 'Zeit', target: 'Ziel', inTarget: 'im Ziel', older: 'Älterer Bezug', newer: 'Neuerer Bezug', pick: 'Bezug auswählen', bean: 'Bohne', note: 'Notiz', editNote: 'Notiz bearbeiten', stars: 'Sterne', chartTime: 'Bezugszeit (s)', chartFlow: 'Durchfluss (g/s)', last: 'letzte', btnTime: 'Zeit', btnFlow: 'Fluss', earlier: 'früher', earlierDate: 'Frühere Sitzung', earlierFull: 'frühere Sitzung (Datum unbekannt)', latest: 'spätestens (genaue Zeit unbekannt)', estimated: 'Kurve geschätzt', empty: 'Noch keine Brühungen.', demo: 'Beispieldaten: Noch keine Waage eingerichtet. Einstellungen → Geräte & Dienste → Mavo Lumicurve hinzufügen (Waage vorher aufwecken).', dose: 'Kaffee', pickHint: 'Balken antippen zum Auswählen', graphAria: 'Gewichtsverlauf über {s} Sekunden', avg: 'Ø' },
+  en: { title: 'Logbook', all: 'All', espresso: 'Espresso', pourover: 'Filter', ratio: 'Ratio (x)', flow: 'Flow (g/s)', weight: 'Weight (g)', time: 'Time', target: 'Target', inTarget: 'on target', older: 'Older brew', newer: 'Newer brew', pick: 'Select brew', bean: 'Beans', note: 'Note', editNote: 'Edit note', stars: 'stars', chartTime: 'Brew time (s)', chartFlow: 'Flow (g/s)', last: 'last', btnTime: 'Time', btnFlow: 'Flow', earlier: 'earlier', earlierDate: 'Earlier session', earlierFull: 'earlier session (date unknown)', latest: 'no later than (exact time unknown)', estimated: 'curve estimated', empty: 'No brews yet.', demo: 'Example data: no scale set up yet. Settings → Devices & services → add Mavo Lumicurve (wake the scale first).', dose: 'coffee', pickHint: 'tap a bar to select', graphAria: 'Weight over {s} seconds', avg: 'Ø' },
 };
 // ---- defaults of every option (a key set in the card config always wins; a CSS variable --mlc-* wins over the built-in default)
 function demoBrews() { // example brews for the empty state and `demo: true`: a week of espresso and a few pour-overs
@@ -181,7 +181,10 @@ class MavoLumicurveCard extends HTMLElement {
     try { localStorage.setItem(KEY, JSON.stringify(this._notes)); } catch {}
     try { await this._h?.callWS({ type: 'frontend/set_user_data', key: KEY, value: this._notes }); } catch {}
   }
-  _disp(b) { const w = when(b.real_ts, this._en), L = this._L; return w || { short: L.earlier, date: L.earlierDate, time: '', full: L.earlierFull, year: 0 }; }
+  _disp(b) { // ts_src latest/seen = upper bound only: "≤" before the time, never hidden
+    const w = when(b.real_ts, this._en), L = this._L; if (!w) return { short: L.earlier, date: L.earlierDate, time: '', full: L.earlierFull, year: 0 };
+    return b.ts_src === 'latest' || b.ts_src === 'seen' ? { ...w, time: '≤ ' + w.time, full: `${L.latest}: ${w.full}`, est: 1 } : w;
+  }
   _list() { // newest first; file order of the scale log = chronological
     return (this._brews || []).map((b, i) => ({ ...b, id: b.id || b.ts + '|' + b.time_s + '|' + b.yield_g, i }))
       .filter(b => (this._c.show_invalid || b.valid !== false) && (this._mode === 'all' || b.mode === this._mode))
@@ -226,7 +229,7 @@ class MavoLumicurveCard extends HTMLElement {
   _nav(b, pos, n, l) { // brew navigator: prev, pill (date · time · type) with the dropdown, next
     const L = this._L, d = this._disp(b), txt = [d.short, d.time, b.mode === 'pourover' ? L.pourover : L.espresso].filter(Boolean).join(' · ');
     return `<div class="nav"><button class="icon" data-nav="1" aria-label="${esc(L.older)}" ${pos >= n - 1 ? 'disabled' : ''}>${ic('left')}</button>
-      ${this._c.show_menu ? `<button class="pill" data-menu aria-haspopup="listbox" aria-expanded="${this._menu}" title="${n - pos}/${n}"><span>${esc(txt)}</span>${ic(this._menu ? 'up' : 'down')}</button>` : `<div class="pill static"><span>${esc(txt)}</span></div>`}
+      ${this._c.show_menu ? `<button class="pill" data-menu aria-haspopup="listbox" aria-expanded="${this._menu}" title="${n - pos}/${n}${d.est ? ' · ' + esc(d.full) : ''}"><span>${esc(txt)}</span>${ic(this._menu ? 'up' : 'down')}</button>` : `<div class="pill static"><span>${esc(txt)}</span></div>`}
       <button class="icon" data-nav="-1" aria-label="${esc(L.newer)}" ${pos <= 0 ? 'disabled' : ''}>${ic('right')}</button>
       ${this._menu ? `<div class="menu" role="listbox" aria-label="${esc(L.pick)}">${this._menuRows(l)}</div>` : ''}</div>`;
   }

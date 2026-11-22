@@ -49,6 +49,8 @@ class MavoCoordinator:
         self.brews, self.notes = data.get("brews", []), data.get("notes", {})
         if data.get("last_sync"):
             self.last_sync = dt_util.parse_datetime(data["last_sync"])
+        if data.get("tsv") != 1:
+            await self._migrate_times()
         self.entry.async_on_unload(
             bluetooth.async_register_callback(
                 self.hass,
@@ -57,6 +59,18 @@ class MavoCoordinator:
                 bluetooth.BluetoothScanningMode.ACTIVE,
             )
         )
+
+    def _local(self, iso: str) -> str:
+        return dt_util.as_local(dt_util.parse_datetime(iso)).strftime("%Y-%m-%d %H:%M:%S")
+
+    async def _migrate_times(self) -> None:
+        """Once: re-read the kept raw logs with the current parser (real times for every run), then stamp what is still unknown with the time it was added."""
+        for log in (await self.raw_store.async_load() or {}).get("logs", []):
+            parsed = await self.hass.async_add_executor_job(parser.parse, log["text"], datetime.fromisoformat(log["synced_at"]), self.settings)
+            self.brews, _ = brewlib.merge(self.brews, parsed, dt_util.utcnow().isoformat())
+        n = brewlib.backfill(self.brews, self._local)
+        _LOGGER.info("Brew times migrated (%d stamped from the time they were added)", n)
+        await self._save()
 
     @callback
     def async_add_listener(self, update: CALLBACK_TYPE) -> Callable[[], None]:
@@ -107,7 +121,7 @@ class MavoCoordinator:
             await client.disconnect()
         await self._keep_raw(text, synced_at)  # reading erases the log on the scale: keep the text before anything can go wrong
         parsed = await self.hass.async_add_executor_job(parser.parse, text, synced_at, self.settings)
-        self.brews, added = brewlib.merge(self.brews, parsed, dt_util.utcnow().isoformat())
+        self.brews, added = brewlib.merge(self.brews, parsed, dt_util.utcnow().isoformat(), synced_at.strftime("%Y-%m-%d %H:%M:%S"))
         brewlib.prune_curves(self.brews, self.settings)
         self.last_sync = dt_util.utcnow()
         await self._save()
@@ -126,7 +140,7 @@ class MavoCoordinator:
 
     async def async_import(self, old: list[dict]) -> int:
         """Add brews read elsewhere (service mavo_lumicurve.import_brews). Returns how many were new."""
-        self.brews, added = brewlib.import_history(self.brews, old, dt_util.utcnow().isoformat())
+        self.brews, added = brewlib.import_history(self.brews, old, dt_util.utcnow().isoformat(), self._local(dt_util.utcnow().isoformat()))
         brewlib.prune_curves(self.brews, self.settings)
         await self._save()
         self.hass.bus.async_fire(EVENT_SYNCED, {"entry_id": self.entry.entry_id, "new": len(added)})
@@ -134,7 +148,7 @@ class MavoCoordinator:
         return len(added)
 
     async def _save(self) -> None:
-        await self.store.async_save({"brews": self.brews, "notes": self.notes, "last_sync": self.last_sync.isoformat() if self.last_sync else None})
+        await self.store.async_save({"tsv": 1, "brews": self.brews, "notes": self.notes, "last_sync": self.last_sync.isoformat() if self.last_sync else None})
 
     async def async_set_note(self, brew_id: str, stars: int, bean: str, note: str) -> None:
         if stars or bean or note:

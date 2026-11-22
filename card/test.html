@@ -22,6 +22,11 @@
     'Wide (forced)': { layout: 'wide' },
     'Compact (forced)': { layout: 'compact' },
     'Demo data': { demo: true },
+    'Time sources (exact / ≤ / unknown)': { brews: [
+      { id: 'a', seq: 0, ts: '? 03:22:14', real_ts: null, mode: 'espresso', valid: true, yield_g: 36, time_s: 24, flow_gs: 1.5, curve: [[0, 0], [24, 36]] },
+      { id: 'b', seq: 1, ts: '2022-03-01 20:08:39', real_ts: '2026-10-11 04:34:36', ts_src: 'latest', mode: 'espresso', valid: true, yield_g: 38, time_s: 25, flow_gs: 1.5, curve: [[0, 0], [25, 38]] },
+      { id: 'c', seq: 2, ts: '? 01:00:00', real_ts: '2026-11-22 11:56:00', ts_src: 'seen', mode: 'espresso', valid: true, yield_g: 37, time_s: 26, flow_gs: 1.4, curve: [[0, 0], [26, 37]] },
+      { id: 'd', seq: 3, ts: '2022-02-22 07:40:17', real_ts: '2026-11-19 16:06:14', ts_src: 'exact', mode: 'espresso', valid: true, yield_g: 36.5, time_s: 25, flow_gs: 1.5, curve: [[0, 0], [25, 36.5]] }] },
     'No brews': { brews: [] },
     'Classic (theme dark)': { theme: 'dark' },
     'Blue accent': { accent: '#5aa9ff', color_pill: '#2b4f8a', background: '#1c2a40', background_end: '#101a2a' },

@@ -34,5 +34,24 @@ class T(unittest.TestCase):
         self.assertTrue(b["ts"].startswith("?"))
         self.assertEqual(b["real_ts"], "2026-11-22 11:50:30")
 
+    def test_earlier_runs_get_an_upper_bound(self):  # run 0 (no date line) | cold boot | run 1 (date line): real_ts for all, only the last run is exact
+        from datetime import datetime
+        b = ("[ 5: 0: 0]D [SW] lock=4000-2000-0,1-1-0\n[ 5: 0:30]I [MP] weight num 5 time 30\n[ 5:10: 0]D [SYS] wakeup\n"
+             "[ 2:30: 0]D [SYS] reboot reason = 0\n[ 2:30: 1]D [SYS] Date:22-2-2\n[ 2:31: 0]D [SW] lock=4000-2000-0,1-1-0\n"
+             "[ 2:31:30]I [MP] weight num 5 time 30\n[ 3:30: 0]I [BLE] connected\n")
+        a, c = parse(b, synced_at=datetime(2026, 11, 22, 12, 0, 0))
+        self.assertEqual((a["run"], a["ts_src"], c["run"], c["ts_src"]), (0, "latest", 1, "exact"))
+        self.assertEqual(c["real_ts"], "2026-11-22 11:01:30")
+        # run 1 starts 1:00:00 before the sync (02:30:00 .. 03:30:00); run 0 ended at 5:10:00 and its brew was 9:30 earlier
+        self.assertEqual(a["real_ts"], "2026-11-22 10:50:30")
+        self.assertEqual(parse(b)[0]["real_ts"], None)  # no sync time, no guess
+
+    def test_lines_before_the_date_line_use_it_as_anchor(self):
+        from datetime import datetime
+        t = ("[ 2:30: 0]D [SYS] reboot reason = 0\n[ 2:31: 0]D [SW] lock=4000-2000-0,1-1-0\n[ 2:31:30]I [MP] weight num 5 time 30\n"
+             "[ 2:40: 0]D [SYS] Date:22-2-2\n[ 3:10: 0]I [BLE] connected\n")
+        b = parse(t, synced_at=datetime(2026, 11, 22, 12, 0, 0))[0]
+        self.assertEqual(b["real_ts"], "2026-11-22 11:21:30")
+
 if __name__ == "__main__":
     unittest.main()

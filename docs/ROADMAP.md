@@ -18,7 +18,8 @@ Status (0.9.0): the integration is built (discovery, sync over Home Assistant's 
   (`[BLE] Connected Master`, `mtu len = 244`). The last line is "now".
 - After every cold boot (`[SYS] … reboot reason = 0`) the clock restarts at 2022-02-02 02:30, so every date reads 2022. The firmware build date in the log shows the data is recent.
 - The log holds several runs between boots. For the **last** run the real time follows from the final line: real = sync time - (last scale clock - brew scale clock).
-  `tools/parse.py` writes this as `real_ts`; older runs have `real_ts: null` and show as "earlier".
+  `tools/parse.py` writes this as `real_ts` (`ts_src: exact`).
+- Earlier runs (before a cold boot): the scale was off for an unknown time, so real time = start of the next run - clock distance is only an upper bound (`ts_src: latest`); spacing inside the run stays exact. Brews with no derivable time get the moment they were added (`seen`).
 - Reading ERASES the scale's log (verified 2026-11-20: every read starts at flash address 0x4000 and returns only what is new). The integration saves the raw log before parsing (`.storage/mavo_lumicurve.<entry>.raw`) and keeps all brews; brews read elsewhere can be added with the service `mavo_lumicurve.import_brews`.
 - Pour-overs have 12 to 20 weight samples (a real curve), espresso shots only 1 to 5 near the end. The scale's broadcast carries no weight.
 

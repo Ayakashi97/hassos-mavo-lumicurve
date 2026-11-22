@@ -144,7 +144,7 @@ The editor needs the Home Assistant frontend (it uses `ha-form`), so it can only
   "yield_g": 268.5, "time_s": 183, "flow_gs": 1.47, "dose_g": 15.0, "ratio": 17.9,
   "curve": [[0, 0], [14, 88.2], [183, 268.5]] }
 ```
-`seq` is the order (newest = highest). `real_ts` is null for brews whose real time is unknown (card shows "früher"/"earlier").
+`seq` is the order (newest = highest). `real_ts` is the real local time; `ts_src` says how far to trust it: `exact` (anchored to the sync), `latest` (no later than: brew from before a cold boot, real gap unknown) or `seen` (the moment it was first seen, upper bound). The card prints "≤" before `latest`/`seen` times. Only brews without any `real_ts` (offline tools, hand-made lists) show "früher"/"earlier".
 `valid: false` marks noise (hidden unless `show_invalid`). `curve` is optional ([seconds, grams] points).
 
 ## 7. Parser settings (`settings.json`)

@@ -35,7 +35,7 @@ class BrewSensor(MavoEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         v = self.coordinator.valid_brews()
-        return {"mode": v[-1]["mode"], "brewed": v[-1].get("real_ts") or v[-1]["ts"], "dose_g": v[-1].get("dose_g")} if v else {}
+        return {"mode": v[-1]["mode"], "brewed": v[-1].get("real_ts") or v[-1]["ts"], "brewed_src": v[-1].get("ts_src"), "dose_g": v[-1].get("dose_g")} if v else {}
 
 
 class CountSensor(MavoEntity, SensorEntity):

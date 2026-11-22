@@ -17,7 +17,13 @@ DEFAULT_SETTINGS = {
     "min_sync_interval_min": 10,  # minutes between two syncs
     "targets": {},  # {"espresso": {"time": [min, max], ...}, "pourover": {...}}
 }
-RAW_KEYS = ("ts", "real_ts", "yield_g", "time_s", "dose_g")
+RAW_KEYS = ("ts", "real_ts", "ts_src", "yield_g", "time_s", "dose_g")
+# how far a real time can be trusted: exact (anchored to the sync), latest (upper bound from a later run), seen (the moment we first saw the brew)
+RANK = {"exact": 3, "latest": 2, "seen": 1}
+
+
+def _rank(b: dict) -> int:
+    return RANK.get(b.get("ts_src") or ("exact" if b.get("real_ts") else ""), 0)
 
 
 def _dt(s: str) -> datetime:
@@ -32,10 +38,11 @@ def _same(a: dict, b: dict) -> bool:
     return bool(ra and rb and abs((_dt(ra) - _dt(rb)).total_seconds()) <= 120)
 
 
-def merge(stored: list[dict], parsed: list[dict], now_iso: str) -> tuple[list[dict], list[dict]]:
+def merge(stored: list[dict], parsed: list[dict], now_iso: str, seen: str | None = None) -> tuple[list[dict], list[dict]]:
     """Add the brews of a fresh log that are not stored yet. Returns (all brews oldest first, the added ones).
 
-    A brew keeps the real time it was given at its first sync; only a missing real time (None) is filled in later.
+    Every brew gets a time: the parsed `real_ts`, else `seen` (local time string of this sync, an upper bound, `ts_src` "seen").
+    A stored time is only replaced by a more trustworthy one (exact > latest > seen); an exact time never changes.
     """
     index: dict[tuple, list[dict]] = {}
     for s in stored:
@@ -46,12 +53,16 @@ def merge(stored: list[dict], parsed: list[dict], now_iso: str) -> tuple[list[di
         key = (p["yield_g"], p["time_s"])
         match = next((s for s in index.get(key, []) if _same(s, p)), None)
         if match:
-            if not match.get("real_ts") and p.get("real_ts"):
-                match["real_ts"] = p["real_ts"]
+            if p.get("real_ts") and _rank(p) > _rank(match):
+                match["real_ts"], match["ts_src"] = p["real_ts"], p.get("ts_src") or "exact"
             if not match.get("curve") and len(p.get("curve") or []) >= 5:
                 match["curve"] = p["curve"]
             continue
         item = {k: p.get(k) for k in RAW_KEYS} | {"seq": nxt, "id": f"b{nxt}", "added": now_iso}
+        if item["real_ts"]:
+            item["ts_src"] = item["ts_src"] or "exact"
+        elif seen:
+            item["real_ts"], item["ts_src"] = seen, "seen"
         if p.get("curve"):
             item["curve"] = p["curve"]
         nxt += 1
@@ -61,9 +72,20 @@ def merge(stored: list[dict], parsed: list[dict], now_iso: str) -> tuple[list[di
     return merged, added
 
 
-def import_history(stored: list[dict], old: list[dict], now_iso: str) -> tuple[list[dict], list[dict]]:
+def backfill(stored: list[dict], to_local) -> int:
+    """Give stored brews without a time the moment they were added (they existed by then = upper bound); label old exact times. Returns how many changed."""
+    n = 0
+    for s in stored:
+        if s.get("real_ts") and not s.get("ts_src"):
+            s["ts_src"], n = "exact", n + 1
+        elif not s.get("real_ts") and s.get("added"):
+            s["real_ts"], s["ts_src"], n = to_local(s["added"]), "seen", n + 1
+    return n
+
+
+def import_history(stored: list[dict], old: list[dict], now_iso: str, seen: str | None = None) -> tuple[list[dict], list[dict]]:
     """Add brews that were read earlier elsewhere (e.g. with the Mac tools) in front of the stored ones; duplicates are skipped."""
-    _, added = merge(stored, old, now_iso)
+    _, added = merge(stored, old, now_iso, seen)
     return added + stored, added
 
 

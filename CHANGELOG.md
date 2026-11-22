@@ -5,6 +5,17 @@ How releases are made: [docs/RELEASING.md](docs/RELEASING.md).
 
 ## [Unreleased]
 
+### Added
+- Every brew now has a time and a source `ts_src`: `exact` (anchored to the sync through the scale's clock), `latest` (upper bound for brews from before a cold boot) or `seen` (the moment the brew was first seen; upper bound). The card shows "≤" before the time of the last two and a tooltip, and never "earlier" any more. Sensor attribute `brewed_src`.
+- One-time migration at startup: the kept raw logs are read again with the new parser, brews that still have no time get the moment they were added (`seen`).
+
+### Changed
+- The parser sets `real_ts` for earlier runs too (upper bound: the real start of the next run minus the scale-clock distance, so the spacing between brews of one run is exact). Lines before the first date line of a run are placed relative to it.
+- A stored time is replaced by a more trustworthy one (exact over latest over seen); an exact time never changes.
+
+### Fixed
+- The card no longer shows "earlier" for brews from before the scale's last cold boot.
+
 ## [1.1.2] - 2026-11-22
 
 ### Fixed

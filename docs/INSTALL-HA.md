@@ -60,7 +60,7 @@ Settings → Devices & services → Mavo Lumicurve → **Configure**: when a bre
 
 ## What you should see
 
-- The newest brew with its real date and time, in four tiles and a weight graph. Brews from before the scale's last cold boot show "früher" ("earlier"), because the scale has no clock of its own.
+- The newest brew with its real date and time, in four tiles and a weight graph. Brews from before the scale's last cold boot show "≤ time" (no later than), because the scale has no clock of its own.
 - Arrows and a dropdown to move between brews, stars and notes (stored in Home Assistant, shared by all users), and a history chart.
 - New brews appear on the card by themselves after a sync.
 
@@ -72,7 +72,7 @@ Settings → Devices & services → Mavo Lumicurve → **Configure**: when a bre
 | "Sync failed" in the log | Scale out of range, or something else (a phone app, the Mac tools) is connected: the scale accepts one connection. Press **Sync now** with the scale awake. |
 | The card says "no brews" | No sync yet. Press **Sync now** with the scale awake and watch the log. |
 | The card is not in the "Add card" list | Restart Home Assistant after installing, then hard refresh. |
-| Everything says "früher" | The brews come from before the scale's last cold boot; new brews get real times. |
+| Times show "≤" | Brews from before the scale's last cold boot only have an upper bound; new brews get exact times. |
 | Stars are gone | They are stored per scale in Home Assistant; check you use the same Mavo Lumicurve entry. |
 
 ## Updating and removing

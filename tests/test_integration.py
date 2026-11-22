@@ -43,6 +43,22 @@ class T(unittest.TestCase):
         self.assertEqual((len(again), added), (len(stored), []))
         self.assertEqual([b["real_ts"] for b in again], [b["real_ts"] for b in stored])  # first sync wins
 
+    def test_every_brew_gets_a_time_and_upgrades_only_to_better(self):
+        mk = lambda ts, src=None, rt=None: {"ts": ts, "real_ts": rt, "ts_src": src, "yield_g": 36.0, "time_s": 20, "dose_g": None}
+        stored, _ = brews.merge([], [mk("? 01:00:00")], "n", seen="2026-11-22 12:00:00")
+        self.assertEqual((stored[0]["real_ts"], stored[0]["ts_src"]), ("2026-11-22 12:00:00", "seen"))
+        s, _ = brews.merge(stored, [mk("? 01:00:00", "latest", "2026-11-22 10:00:00")], "n")
+        self.assertEqual((s[0]["real_ts"], s[0]["ts_src"]), ("2026-11-22 10:00:00", "latest"))
+        s, _ = brews.merge(s, [mk("? 01:00:00", "exact", "2026-11-22 09:55:00")], "n")
+        self.assertEqual(s[0]["ts_src"], "exact")
+        s, _ = brews.merge(s, [mk("? 01:00:00", "latest", "2026-11-22 08:00:00")], "n")  # worse never wins
+        self.assertEqual(s[0]["real_ts"], "2026-11-22 09:55:00")
+
+    def test_backfill_stamps_old_brews(self):
+        old = [{"real_ts": "2026-11-19 10:00:00"}, {"real_ts": None, "added": "A"}, {"real_ts": None}]
+        self.assertEqual(brews.backfill(old, lambda iso: "2026-11-20 08:00:00"), 2)
+        self.assertEqual([(b.get("ts_src"), b["real_ts"]) for b in old], [("exact", "2026-11-19 10:00:00"), ("seen", "2026-11-20 08:00:00"), (None, None)])
+
     def test_import_history_goes_first_and_skips_duplicates(self):
         mk = lambda ts, y, t: {"ts": ts, "real_ts": None, "yield_g": y, "time_s": t, "dose_g": None}
         stored, _ = brews.merge([], [mk("2026-11-20 09:00:00", 40.0, 21)], "n")
